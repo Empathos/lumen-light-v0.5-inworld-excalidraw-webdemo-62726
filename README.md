@@ -29,6 +29,7 @@ The live surface stays interactive and reversible. Long-term memory systems hand
 
 ## What Lumen Light manages
 
+- A dependency-free browser highlighter for static HTML.
 - Realtime transcript-to-canvas updates.
 - Semantic text state such as speaker, state, intensity, and emphasis.
 - Cards, diagrams, and whiteboard objects derived from conversation.
@@ -55,26 +56,36 @@ The live surface stays interactive and reversible. Long-term memory systems hand
 │   ├── ARCHITECTURE.md
 │   └── PRD.md
 ├── examples/
-│   └── conversation-artifact.example.json
+│   ├── conversation-artifact.example.json
+│   └── static-highlight-demo.html
 ├── prompts/
 │   └── validate-artifact.prompt.md
 ├── schemas/
 │   └── conversation-artifact.schema.json
-└── scripts/
-    └── validate_artifact.py
+├── scripts/
+│   └── validate_artifact.py
+└── src/
+    └── lumen-light.js
 ```
 
 ## Current status
 
-Lumen Light is staged as a public product skeleton. The current implementation defines the core architecture, product requirements, artifact schema, synthetic example, and deterministic validation script.
+Lumen Light is staged as a public product skeleton with a working static HTML highlight runtime. The current implementation defines the core architecture, product requirements, artifact schema, synthetic example, deterministic validation script, and browser demo.
 
 Run the public-safe eval:
 
 ```bash
 python3 scripts/validate_artifact.py examples/conversation-artifact.example.json
+node --check src/lumen-light.js
 ```
 
-Expected output:
+Open the static demo in a browser:
+
+```text
+examples/static-highlight-demo.html
+```
+
+Expected validator output:
 
 ```text
 LUMEN_LIGHT_ARTIFACT_OK
