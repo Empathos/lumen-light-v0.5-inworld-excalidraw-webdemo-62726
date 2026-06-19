@@ -93,6 +93,7 @@ python3 -m pip install -r requirements.txt
 python3 scripts/validate_artifact.py examples/conversation-artifact.example.json
 python3 scripts/validate_artifact.py examples/highlight-artifact.example.json
 python3 scripts/validate_artifact.py examples/staged-card-artifact.example.json
+python3 -m unittest discover -s test
 node --check src/static-highlighter/lumen-light.js
 ```
 
