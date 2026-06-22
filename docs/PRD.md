@@ -178,14 +178,17 @@ Required:
 - support artifact kinds: claim, decision, question, risk, action, and insight
 - accept, reject, or edit staged artifacts
 - visibly distinguish source text, agent interpretation, and accepted artifact
+- project staged and accepted artifacts into Excalidraw as the shared visual
+  surface
 - export accepted artifacts with evidence references
 - import an export packet and reconstruct review state
 - validate public-safe fixtures deterministically
 
-The MVP may use a simple DOM-based review surface before the spatial canvas is
-fully productized. The existing Excalidraw prototype should remain available as
-a working visual prototype, but the MVP contract should not depend on
-Excalidraw as the durable model.
+The MVP should include Excalidraw from the beginning as the shared visual
+projection surface, because the product is meant to be a briefing room rather
+than only a source-plus-list review tool. The durable model still remains
+Lumen's artifact and review state. Excalidraw renders and arranges that state;
+it does not become the source of truth.
 
 ## Not Now
 
@@ -326,12 +329,12 @@ Features:
 
 ### Phase 1: Owned Grounded Text Loop
 
-Build the source-pane, highlight, agent-text-briefing, staging, artifact, and
-export/import loop in Lumen-owned code.
+Build the source-pane, highlight, agent-text-briefing, staging, Excalidraw
+projection, artifact, and export/import loop in Lumen-owned code.
 
 Success: one user can load a source, receive grounded briefing turns, review
-staged artifacts, accept the useful ones, and export a packet with valid
-evidence references.
+staged artifacts, see those artifacts projected into Excalidraw, accept the
+useful ones, and export a packet with valid evidence references.
 
 ### Phase 2: Realtime Voice Briefer
 

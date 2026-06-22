@@ -108,8 +108,10 @@ examples/static-highlight-demo.html
 The briefing review demo is the first assistant/operator-controlled product
 loop: load source material, step through scripted agent briefing turns, watch
 the referenced source span highlight, accept/reject/edit the staged artifacts,
-and export the accepted packet as JSON. There is no voice, model call, or
-canvas in this slice — it runs entirely off a deterministic fixture.
+project the reviewed artifacts into the visual surface, and export the accepted
+packet as JSON. There is no voice or model call in this slice — it runs off a
+deterministic fixture — but Excalidraw/whiteboard projection is part of the
+intended integrated surface from the beginning.
 
 Run the Node test harness (artifact state machine + source anchoring):
 

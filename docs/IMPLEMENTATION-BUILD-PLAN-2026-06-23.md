@@ -24,7 +24,7 @@ source document/transcript
   + agent chat/briefing
   + synchronized highlights
   + staged review cards
-  + optional Excalidraw projection
+  + integrated Excalidraw projection
   -> accepted export packet
 ```
 
@@ -45,10 +45,10 @@ Useful code already exists:
 Main gap:
 
 - there is no single local app that combines source pane, agent briefing pane,
-  synchronized highlight activation, staged artifacts, accept/reject/edit, and
-  export.
+  synchronized highlight activation, staged artifacts, Excalidraw projection,
+  accept/reject/edit, and export.
 
-## Sprint 1: Local Briefing Review Page
+## Sprint 1: Local Briefing Review Page With Excalidraw Projection
 
 Goal: create the smallest testable product loop without voice.
 
@@ -65,15 +65,21 @@ Build:
 5. Clicking or playing a briefing turn activates the matching highlight in the
    source pane.
 6. Proposed artifacts appear in a staging/review area.
-7. User can accept, reject, or edit each proposed artifact.
-8. Accepted artifacts export as JSON.
+7. Proposed artifacts also project into an Excalidraw lane as cards or nodes.
+8. User can accept, reject, or edit each proposed artifact.
+9. Excalidraw projection updates when the artifact state or text changes.
+10. Accepted artifacts export as JSON.
 
 Acceptance tests:
 
 - opening the demo shows source, briefing, and staging panes
 - activating a briefing turn highlights the expected source span
+- activating a briefing turn creates or focuses the expected Excalidraw
+  projection object
 - accepting an artifact changes its state to accepted
+- accepting an artifact updates the projection state
 - rejecting an artifact changes its state to rejected
+- rejecting an artifact removes or visibly marks the projection
 - exported JSON includes only accepted artifacts unless a debug option includes
   rejected artifacts
 - existing artifact validation still passes
@@ -85,6 +91,7 @@ Files likely touched:
 - new `src/briefing-review/*.js`
 - new `examples/briefing-session.example.json`
 - `test/` for schema/export validation
+- projection mapping tests for Excalidraw element generation
 
 ## Sprint 2: Artifact Contract That Supports The Demo
 
@@ -161,28 +168,29 @@ Files likely touched:
 - new fixtures under `examples/`
 - tests for adapter parsing and failure cases
 
-## Sprint 4: Excalidraw Projection
+## Sprint 4: Productize Excalidraw Integration
 
-Goal: keep Excalidraw as a projection surface, not the durable source of truth.
+Goal: deepen the Excalidraw projection without changing the core rule that
+Lumen artifact/review state owns durability.
 
 Build:
 
-1. Map accepted or staged artifacts to Excalidraw elements.
-2. Add a button or mode that projects current artifacts onto the existing
-   Excalidraw prototype.
+1. Replace the minimal first-slice projection with a richer Excalidraw renderer.
+2. Support artifact grouping, connectors, and viewport focus.
 3. Keep artifact JSON as the durable state.
 4. Treat Excalidraw element JSON as view/projection state only.
 
 Acceptance tests:
 
-- artifact card maps to deterministic Excalidraw element
-- rejected artifacts are not projected by default
+- artifact cards map to deterministic Excalidraw elements
+- rejected artifacts are not projected by default or are visibly marked
 - changing projection does not mutate accepted artifact content
+- viewport focus follows the active briefing turn
 
 Files likely touched:
 
 - `prototypes/lumen-light-whiteboard-prototype/src/whiteboard-elements.js`
-- new bridge module between `src/briefing-review/` and prototype code
+- bridge module between `src/briefing-review/` and prototype code
 - prototype tests
 
 ## Sprint 5: OpenAI Realtime Voice Briefer
@@ -218,7 +226,9 @@ Files likely touched:
 
 ## Immediate First PR
 
-The first PR should not touch voice or Excalidraw.
+The first PR should not touch voice, schema reconciliation, or model-backed
+generation. It should include Excalidraw as the visual projection lane from the
+beginning.
 
 Implement:
 
@@ -229,13 +239,15 @@ Implement:
    - renders scripted agent turns
    - highlights the referenced source span
    - shows staged artifacts
+   - projects staged/accepted artifacts into Excalidraw
    - accepts/rejects artifacts
    - exports accepted JSON
-4. tests for artifact state transitions and export shape
+4. tests for artifact state transitions, projection mapping, and export shape
 
 Definition of done:
 
 - a local browser demo proves the core product interaction
+- the demo includes Excalidraw as a visible integrated projection surface
 - the demo can be shown without explaining architecture first
 - the user can test the loop in under five minutes
 

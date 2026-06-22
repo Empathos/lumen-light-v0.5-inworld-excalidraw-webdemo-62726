@@ -10,7 +10,7 @@ engineering terms. This is the spec for starting implementation tonight.
 Build a local text-controlled agent briefing surface where the agent walks a
 user through source material, highlights the source spans it is discussing,
 creates staged review artifacts, lets the user accept/reject/edit them, and
-exports the accepted packet.
+projects those artifacts into Excalidraw, then exports the accepted packet.
 
 Voice is not required for this build. The agent controls the surface directly
 through structured UI actions. OpenAI Realtime voice becomes another input and
@@ -35,6 +35,12 @@ The important thing to prove tonight is the product control loop, not the
 provider modality. If the assistant/operator can control the surface directly
 and the UI behaves correctly, the later voice agent has a clear set of product
 actions to call.
+
+Excalidraw is part of this version from the beginning because the product is
+intended to be a shared visual briefing surface, not only a source-plus-list
+review tool. The control model is still Lumen-owned: assistant/operator actions
+create and update staged artifacts, and Excalidraw renders those artifacts as a
+projection. Excalidraw element JSON is not the durable source of truth.
 
 ## Who Opens It
 
@@ -69,6 +75,7 @@ load source
   -> agent briefing turn appears
   -> referenced source span highlights
   -> staged artifact appears
+  -> Excalidraw projection updates
   -> human accepts, rejects, or edits
   -> accepted artifacts export as JSON
 ```
@@ -78,7 +85,8 @@ The visible product surfaces are:
 1. Source pane
 2. Agent briefing pane
 3. Staging/review pane
-4. Export pane or export control
+4. Excalidraw projection pane
+5. Export pane or export control
 
 The product must make three layers visually distinct:
 
@@ -104,7 +112,9 @@ When the user clicks a briefing turn or presses the next-turn control:
 1. The active briefing turn is selected.
 2. The source pane highlights the referenced source span.
 3. The staged artifact linked to that turn appears or receives focus.
-4. The review pane shows accept, reject, and edit controls.
+4. The Excalidraw pane creates or focuses the visual projection for that
+   staged artifact.
+5. The review pane shows accept, reject, and edit controls.
 
 When the user accepts an artifact:
 
@@ -302,6 +312,16 @@ Rules:
 - Provides a visible preview or downloadable blob.
 - Includes source document identity and artifact evidence references.
 
+### Excalidraw Projection Pane
+
+- Is present in the first integrated product surface.
+- Renders staged and accepted artifacts as visual cards or nodes.
+- Focuses the visual object associated with the active briefing turn.
+- Updates visual state when an artifact is accepted, rejected, or edited.
+- Does not create accepted artifacts by itself.
+- Does not become the durable source of truth; Lumen artifact/review state
+  remains authoritative.
+
 ## Implementation Files
 
 Add:
@@ -309,11 +329,13 @@ Add:
 - `package.json`
 - `src/briefing-review/source-pane.js`
 - `src/briefing-review/state.js`
+- `src/briefing-review/excalidraw-projection.js`
 - `src/briefing-review/demo.js`
 - `examples/briefing-session.example.json`
 - `examples/briefing-review-demo.html`
 - `test/briefing-review/anchor.test.js`
 - `test/briefing-review/state.test.js`
+- `test/briefing-review/excalidraw-projection.test.js`
 
 Modify:
 
@@ -323,7 +345,11 @@ Do not modify in the first build:
 
 - `src/static-highlighter/lumen-light.js`
 - `schemas/conversation-artifact.schema.json`
+
+Use, but do not make durable:
+
 - `prototypes/lumen-light-whiteboard-prototype/`
+- Excalidraw element JSON
 
 ## Acceptance Criteria
 
@@ -333,11 +359,17 @@ The build is done when:
 - `python3 -m unittest discover -s test` still passes.
 - `python3 -m http.server` can serve the repo locally.
 - Opening `examples/briefing-review-demo.html` shows source, briefing, staging,
-  and export surfaces.
+  Excalidraw projection, and export surfaces.
 - Activating a briefing turn highlights the expected source span.
+- Activating a briefing turn creates or focuses the corresponding Excalidraw
+  projection object.
 - Accepting an artifact changes its state to `accepted`.
+- Accepting an artifact updates its Excalidraw projection state.
 - Rejecting an artifact changes its state to `rejected`.
+- Rejecting an artifact removes or visibly marks its Excalidraw projection
+  without deleting the reviewed artifact state.
 - Editing an artifact preserves original text and stores edited text.
+- Editing an artifact updates the projected Excalidraw card text.
 - Default export includes accepted artifacts only.
 - Every accepted exported artifact has a source span reference.
 - Missing or stale spans do not create false highlights.
@@ -346,7 +378,6 @@ The build is done when:
 
 - OpenAI Realtime WebRTC voice
 - model-backed agent generation
-- Excalidraw projection
 - schema reconciliation
 - import/reload reconstruction
 - multi-user collaboration
@@ -359,12 +390,14 @@ The build is done when:
 1. Add root Node test harness.
 2. Add scoped source span anchoring.
 3. Add artifact state machine.
-4. Add synthetic briefing session fixture.
-5. Add demo page.
-6. Add demo controller.
-7. Add README run instructions.
-8. Run tests.
-9. Open the local demo and manually verify the loop.
+4. Add deterministic artifact-to-Excalidraw projection mapping.
+5. Add synthetic briefing session fixture.
+6. Add demo page with source, briefing, review, Excalidraw projection, and
+   export panes.
+7. Add demo controller.
+8. Add README run instructions.
+9. Run tests.
+10. Open the local demo and manually verify the loop.
 
 ## First Manual Test Script
 
@@ -382,11 +415,15 @@ http://localhost:8787/examples/briefing-review-demo.html
 
 3. Click the first agent briefing turn.
 4. Confirm the referenced source span highlights.
-5. Accept the proposed artifact.
-6. Click the second turn.
-7. Reject or edit its artifact.
-8. Export accepted JSON.
-9. Confirm rejected artifacts are excluded from default export.
+5. Confirm the corresponding Excalidraw projection card appears or receives
+   focus.
+6. Accept the proposed artifact.
+7. Confirm the Excalidraw projection reflects accepted state.
+8. Click the second turn.
+9. Reject or edit its artifact.
+10. Confirm the Excalidraw projection reflects rejected or edited state.
+11. Export accepted JSON.
+12. Confirm rejected artifacts are excluded from default export.
 
 ## Design Guardrails
 
@@ -396,4 +433,7 @@ http://localhost:8787/examples/briefing-review-demo.html
   product.
 - Evidence references are required underneath, but the UI should speak in
   simple terms: source, briefing, review, export.
-- Do not let voice, schema, or canvas work block the first usable loop.
+- Excalidraw is integrated from the beginning as the shared visual surface.
+- Do not let voice or schema work block the first usable loop.
+- Do not let Excalidraw own the product state; it is a projection controlled by
+  Lumen's artifact/review state.

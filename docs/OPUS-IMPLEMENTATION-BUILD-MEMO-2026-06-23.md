@@ -8,7 +8,9 @@ Mode: coding planner, not philosophy
 
 The implementation build plan in
 `docs/IMPLEMENTATION-BUILD-PLAN-2026-06-23.md` is directionally correct and
-well-sequenced: text loop, schema, adapter, Excalidraw projection, then voice.
+well-sequenced after correction: assistant/operator-controlled briefing loop
+with Excalidraw projection included from the beginning, then schema
+reconciliation, adapter, deeper Excalidraw integration, then voice.
 
 Three corrections matter:
 
@@ -20,8 +22,10 @@ Three corrections matter:
 3. Decide the host runtime before voice. The first demo can be framework-free
    ESM; voice later needs a server for ephemeral Realtime session credentials.
 
-The smallest first PR should make Lumen Light testable locally with zero new
-runtime dependencies and no build step.
+The smallest first PR should make Lumen Light testable locally with no voice,
+no model call, and no schema reconciliation. It should include Excalidraw as a
+first-class projection lane, because the product is intended to be a shared
+visual briefing surface from the start.
 
 ## Repo Reality Check
 
@@ -53,13 +57,14 @@ Current contradictions:
   state with artifact approval state.
 - `src/static-highlighter/lumen-light.js` is not scoped enough for a
   per-session source pane.
-- The Excalidraw prototype is a separate runtime and should not be the first
-  product surface.
+- The Excalidraw prototype is a separate runtime, so the first product surface
+  should include a minimal controlled Excalidraw projection rather than making
+  the prototype runtime the durable model.
 
 ## First PR Recommendation
 
-Build a local grounded briefing review demo: text only, no dependencies, no
-build step.
+Build a local grounded briefing review demo: text-controlled, assistant/operator
+driven, with Excalidraw present as the visual projection surface.
 
 The demo should:
 
@@ -67,7 +72,10 @@ The demo should:
 - render scripted agent briefing turns
 - activate the referenced source span when a turn is clicked
 - show proposed artifacts in a staging pane
+- project proposed artifacts into Excalidraw as cards/nodes
 - allow accept, reject, and edit
+- update Excalidraw projection state when artifacts are accepted, rejected, or
+  edited
 - export accepted artifacts as JSON
 
 The first PR export should use its own briefing-packet shape. It should not be
@@ -83,12 +91,15 @@ Add:
   `stage`, `accept`, `reject`, `edit`, and `exportAccepted`
 - `src/briefing-review/source-pane.js`: scoped source-span anchoring and
   activation
+- `src/briefing-review/excalidraw-projection.js`: deterministic mapping from
+  staged/accepted artifacts to Excalidraw projection elements
 - `examples/briefing-session.example.json`: synthetic source text, scripted
   briefing turns, and proposed artifacts
 - `examples/briefing-review-demo.html`: browser demo with source, briefing,
-  and staging panes
+  staging, Excalidraw projection, and export panes
 - `test/briefing-review/state.test.js`
 - `test/briefing-review/anchor.test.js`
+- `test/briefing-review/excalidraw-projection.test.js`
 
 Modify:
 
@@ -112,6 +123,9 @@ Use root `node --test` for pure logic tests:
 - repeated text is disambiguated with prefix/suffix
 - missing span reports a skip instead of mis-highlighting
 - every scripted briefing turn references an existing source span/artifact
+- staged/accepted artifacts map to deterministic Excalidraw projection objects
+- reject/edit actions update projection state without mutating artifact
+  identity
 
 Keep the existing Python validation tests green:
 
@@ -140,10 +154,14 @@ Do not reuse from `src/static-highlighter/` in the first PR:
 - `localStorage` persistence
 - document-wide singleton behavior
 
-Reuse from the Excalidraw prototype later:
+Reuse from the Excalidraw prototype immediately, but narrowly:
 
 - skeleton element shape
 - artifact-to-visual mapping concepts
+- rendering conventions that make cards/nodes easy to inspect
+
+Reuse from the Excalidraw prototype later:
+
 - agent/provider and settings concepts after the text loop is stable
 
 Keep out of the first product slice:
@@ -151,7 +169,7 @@ Keep out of the first product slice:
 - the whiteboard system prompt
 - prompt-cache warmup loop
 - line-numbered whiteboard edit tools
-- React/Excalidraw runtime
+- direct Excalidraw element JSON as durable state
 
 ## Agent Adapter Placement
 
@@ -193,13 +211,13 @@ Order:
 6. Tool calls write staged artifacts or active highlights only.
 7. Spoken turns are captured as briefing turns.
 
-Voice is deferred until after the first ten commits.
+Voice is deferred until after the integrated source/briefing/review/Excalidraw
+projection loop works.
 
 ## Not Now
 
 - speech-to-speech voice and Realtime tool bindings
-- Excalidraw projection
-- React/CDN whiteboard runtime as the MVP surface
+- model-backed agent generation
 - cross-origin iframe highlighting
 - multi-user collaboration
 - memory return path
@@ -236,27 +254,27 @@ Voice is deferred until after the first ten commits.
    briefing turns, and proposed artifacts across required kinds.
 
 5. `feat(demo): add briefing review page`
-   Add `examples/briefing-review-demo.html` with source, briefing, and staging
-   panes.
+   Add `examples/briefing-review-demo.html` with source, briefing, staging,
+   Excalidraw projection, and export panes.
 
-6. `feat(demo): add controls and run docs`
+6. `feat(excalidraw): add projection mapping`
+   Add deterministic artifact-to-Excalidraw projection elements and tests.
+
+7. `feat(demo): add controls and run docs`
    Add accept/reject/edit/export controls and README instructions. This is the
    end of the first PR/MVP slice.
 
-7. `feat(schema): reconcile artifact contract`
+8. `feat(schema): reconcile artifact contract`
    Add missing artifact kinds, approval state, and document-first source-span
    support. Update validator and fixtures.
 
-8. `feat(schema): add export packet schema`
+9. `feat(schema): add export packet schema`
    Add `schemas/export-packet.schema.json`, packet fixture, and validator path.
 
-9. `refactor(highlighter): share anchoring core`
+10. `refactor(highlighter): share anchoring core`
    Extract common anchoring into a shared module and point both the static
    highlighter and briefing demo at it.
 
-10. `feat(adapter): add briefing-turn adapter seam`
-    Add fixture-backed adapter behind the stable `briefing_turn` interface and
-    tests that malformed output is rejected.
-
-After commit 10: mount the briefing review surface under the prototype server,
-then do the `gpt-realtime-2` voice spike, then add Excalidraw projection.
+After commit 10: add the fixture-backed briefing-turn adapter seam, mount the
+briefing review surface under the prototype server, then do the
+`gpt-realtime-2` voice spike.
