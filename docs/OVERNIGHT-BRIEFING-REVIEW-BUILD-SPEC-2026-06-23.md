@@ -16,6 +16,26 @@ Voice is not required for this build. The agent controls the surface directly
 through structured UI actions. OpenAI Realtime voice becomes another input and
 output modality after this control loop works.
 
+## Control Model For This Build
+
+This version is assistant/operator-controlled.
+
+That means the first build does not need to prove live autonomous voice,
+Realtime WebRTC, or open-ended model planning. A human or assistant operator
+can drive the demo by selecting scripted briefing turns and triggering the same
+structured actions that a future realtime briefer will call:
+
+- activate a briefing turn
+- highlight a source span
+- reveal or focus a staged artifact
+- accept, reject, or edit the artifact
+- export the accepted packet
+
+The important thing to prove tonight is the product control loop, not the
+provider modality. If the assistant/operator can control the surface directly
+and the UI behaves correctly, the later voice agent has a clear set of product
+actions to call.
+
 ## Who Opens It
 
 The first user is a sense-maker: founder, researcher, product lead, strategist,
