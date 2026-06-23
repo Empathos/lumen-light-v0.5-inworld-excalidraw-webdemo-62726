@@ -33,6 +33,26 @@
     .card-accepted { border-color: #16a34a; background: #f0fdf4; }
     .card-rejected { border-color: #dc2626; background: #fef2f2; opacity: .7; }
     .card-edited { border-color: #d97706; background: #fffbeb; }
+    .projection-pane { padding: 0 24px 16px; }
+    .projection-head { display: flex; align-items: baseline; gap: 16px; }
+    .projection-head label { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+    #projectionMeta { font-size: 12px; color: var(--muted); }
+    #projection {
+      position: relative; background: #fcfcff;
+      background-image: radial-gradient(#e6e6ef 1px, transparent 1px);
+      background-size: 24px 24px;
+      border: 1px solid var(--line); border-radius: 10px; min-height: 200px;
+      overflow: auto; padding: 0;
+    }
+    .xd-card {
+      position: absolute; border-style: solid; border-radius: 10px;
+      padding: 10px 12px; box-shadow: 0 1px 2px rgba(15,17,23,.06);
+      transition: box-shadow .15s ease;
+    }
+    .xd-card .xd-badge { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+    .xd-card .xd-label { margin-top: 6px; font-size: 14px; line-height: 1.4; color: var(--ink); }
+    .xd-card-rejected { opacity: .65; }
+    .xd-card-focus { box-shadow: 0 0 0 3px rgba(139,92,246,.35); }
     .controls { padding: 0 24px 16px; }
     .controls button { font: inherit; padding: 6px 14px; margin-right: 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; }
     .export-pane { padding: 0 24px 32px; }
@@ -70,6 +90,15 @@
     </section>
   </div>
 
+  <div class="projection-pane">
+    <div class="projection-head">
+      <h2 class="muted" style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;">Excalidraw projection</h2>
+      <label><input type="checkbox" id="projectionDebug" /> Show rejected (debug)</label>
+      <span id="projectionMeta"></span>
+    </div>
+    <div id="projection"></div>
+  </div>
+
   <div class="export-pane">
     <h2 class="muted" style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;">Export</h2>
     <pre id="export">Accept artifacts, then click "Export accepted".</pre>
@@ -77,6 +106,7 @@
 
   <script src="../src/briefing-review/state.js"></script>
   <script src="../src/briefing-review/source-pane.js"></script>
+  <script src="../src/briefing-review/excalidraw-projection.js"></script>
   <script src="../src/briefing-review/demo.js"></script>
   <script>
     fetch('./briefing-session.example.json')
@@ -89,6 +119,9 @@
             skipped: document.getElementById('skipped'),
             briefing: document.getElementById('briefing'),
             staging: document.getElementById('staging'),
+            projection: document.getElementById('projection'),
+            projectionMeta: document.getElementById('projectionMeta'),
+            projectionDebug: document.getElementById('projectionDebug'),
             export: document.getElementById('export'),
             prev: document.getElementById('prev'),
             next: document.getElementById('next'),

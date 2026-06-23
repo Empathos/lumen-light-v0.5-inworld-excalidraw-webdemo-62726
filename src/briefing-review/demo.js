@@ -16,6 +16,7 @@
 
   const SourcePane = window.LumenSourcePane;
   const State = window.LumenBriefingState;
+  const Projection = window.LumenExcalidrawProjection;
 
   function startBriefingReview(options) {
     const opts = options || {};
@@ -28,6 +29,7 @@
     const turnOrder = (session.briefing_turns || []).map((t) => t.turn_id);
     const visitedTurns = new Set();
     let activeTurnId = null;
+    let projectionDebug = false;
 
     // --- Source pane ---------------------------------------------------------
     const report = SourcePane.renderSource(els.source, sourceText, session.spans);
@@ -64,7 +66,20 @@
       SourcePane.setActiveSpan(els.source, spanId);
 
       renderBriefing();
+      renderReview();
+    }
+
+    function activeArtifactId() {
+      if (!activeTurnId) return null;
+      const turn = turnById.get(activeTurnId);
+      return (turn && (turn.proposed_artifact_ids || [])[0]) || null;
+    }
+
+    // Re-render the staging pane and its Excalidraw projection together so they
+    // always reflect the same authoritative artifact state.
+    function renderReview() {
       renderStaging();
+      renderProjection();
     }
 
     function stepTurn(delta) {
@@ -118,11 +133,11 @@
 
       const actions = document.createElement('div');
       actions.className = 'card-actions';
-      actions.appendChild(button('Accept', () => { state.accept(artifact.artifact_id); renderStaging(); }));
-      actions.appendChild(button('Reject', () => { state.reject(artifact.artifact_id); renderStaging(); }));
+      actions.appendChild(button('Accept', () => { state.accept(artifact.artifact_id); renderReview(); }));
+      actions.appendChild(button('Reject', () => { state.reject(artifact.artifact_id); renderReview(); }));
       actions.appendChild(button('Edit', () => {
         const next = window.prompt('Edit artifact text:', artifact.text);
-        if (next && next.trim()) { state.edit(artifact.artifact_id, next.trim()); renderStaging(); }
+        if (next && next.trim()) { state.edit(artifact.artifact_id, next.trim()); renderReview(); }
       }));
       card.appendChild(actions);
       return card;
@@ -134,6 +149,75 @@
       b.textContent = label;
       b.addEventListener('click', onClick);
       return b;
+    }
+
+    // --- Excalidraw projection ----------------------------------------------
+    // The board is a *projection* of Lumen artifact state, not a source of
+    // truth: it is recomputed deterministically from the current artifacts on
+    // every change. Rejected cards are hidden unless projection debug is on.
+    function renderProjection() {
+      if (!els.projection) return;
+      const board = els.projection;
+      board.textContent = '';
+
+      const artifacts = visibleArtifactIds().map((id) => state.get(id));
+      const projection = Projection.projectArtifacts(artifacts, {
+        debug: projectionDebug,
+        activeArtifactId: activeArtifactId(),
+      });
+
+      if (els.projectionMeta) {
+        els.projectionMeta.textContent = projection.cards.length
+          ? projection.cards.length + ' card(s) projected' +
+            (projectionDebug ? ' · debug: rejected shown' : '')
+          : '';
+      }
+
+      if (!projection.cards.length) {
+        const empty = document.createElement('p');
+        empty.className = 'muted';
+        empty.textContent = 'Accepted and staged artifacts will appear here as a board.';
+        board.appendChild(empty);
+        return;
+      }
+
+      const { LAYOUT } = Projection;
+      let boardHeight = LAYOUT.top;
+      let focusedNode = null;
+
+      projection.elements.forEach((element, i) => {
+        const card = projection.cards[i];
+        const node = document.createElement('div');
+        node.className = 'xd-card xd-card-' + card.state + (card.focused ? ' xd-card-focus' : '');
+        node.dataset.elementId = element.id;
+        node.dataset.artifactId = card.artifact_id;
+        node.style.left = element.x + 'px';
+        node.style.top = element.y + 'px';
+        node.style.width = element.width + 'px';
+        node.style.minHeight = element.height + 'px';
+        node.style.backgroundColor = element.backgroundColor;
+        node.style.borderColor = element.strokeColor;
+        node.style.borderWidth = element.strokeWidth + 'px';
+
+        const badge = document.createElement('span');
+        badge.className = 'xd-badge';
+        badge.textContent = card.kind + ' · ' + card.state;
+        node.appendChild(badge);
+
+        const label = document.createElement('div');
+        label.className = 'xd-label';
+        label.textContent = element.label.text;
+        node.appendChild(label);
+
+        board.appendChild(node);
+        boardHeight = Math.max(boardHeight, element.y + element.height + LAYOUT.gap);
+        if (card.focused) focusedNode = node;
+      });
+
+      board.style.minHeight = boardHeight + 'px';
+      if (focusedNode && typeof focusedNode.scrollIntoView === 'function') {
+        focusedNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
 
     // --- Export --------------------------------------------------------------
@@ -149,10 +233,16 @@
     if (els.prev) els.prev.addEventListener('click', () => stepTurn(-1));
     if (els.exportBtn) els.exportBtn.addEventListener('click', () => exportPacket({ debug: false }));
     if (els.debugExportBtn) els.debugExportBtn.addEventListener('click', () => exportPacket({ debug: true }));
+    if (els.projectionDebug) {
+      els.projectionDebug.addEventListener('change', (e) => {
+        projectionDebug = Boolean(e.target.checked);
+        renderProjection();
+      });
+    }
 
-    renderStaging();
+    renderReview();
 
-    return { activateTurn, stepTurn, exportPacket, state };
+    return { activateTurn, stepTurn, exportPacket, renderProjection, state };
   }
 
   window.LumenBriefingDemo = { startBriefingReview };

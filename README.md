@@ -131,19 +131,30 @@ http://localhost:8787/examples/briefing-review-demo.html
 ```
 
 Manual loop: click a briefing turn (or use Next/Previous), confirm the source
-span highlights, accept one artifact and reject or edit another, then click
-"Export accepted" — the packet should contain accepted artifacts only, each
-with a source span reference. "Debug export (all)" includes every state.
+span highlights and that the artifact appears as a card on the Excalidraw
+projection board (the active turn's card is focused). Accept one artifact and
+reject or edit another, and watch the projection update — accepted/edited cards
+restyle and rejected cards drop out of the board. Then click "Export accepted" —
+the packet should contain accepted artifacts only, each with a source span
+reference. "Debug export (all)" includes every state, and the "Show rejected
+(debug)" toggle re-includes rejected cards in the projection.
+
+The Excalidraw projection is a *view* of Lumen artifact state, not a source of
+truth. Artifacts are mapped deterministically into Excalidraw skeleton element
+JSON (the same shape the whiteboard prototype feeds to
+`convertToExcalidrawElements`) and re-projected on every change; the element JSON
+is never made durable.
 
 Relevant files:
 
 ```text
-src/briefing-review/state.js        artifact state machine + export packet
-src/briefing-review/source-pane.js  scoped source span anchoring + rendering
-src/briefing-review/demo.js         browser demo controller (operator actions)
-examples/briefing-session.example.json   synthetic fixture
-examples/briefing-review-demo.html       demo page
-test/briefing-review/                    Node tests for anchoring and state
+src/briefing-review/state.js                  artifact state machine + export packet
+src/briefing-review/source-pane.js            scoped source span anchoring + rendering
+src/briefing-review/excalidraw-projection.js  deterministic artifact -> Excalidraw mapping
+src/briefing-review/demo.js                   browser demo controller (operator actions)
+examples/briefing-session.example.json        synthetic fixture
+examples/briefing-review-demo.html            demo page
+test/briefing-review/                         Node tests for anchoring, state, projection
 ```
 
 Expected validator output:
