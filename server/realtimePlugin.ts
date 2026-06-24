@@ -72,7 +72,36 @@ pass is usually enough.
 IMPORTANT: the screenshot returned after capture_canvas is generated
 automatically by the app — it is NOT provided by the user. Never thank the user
 for screenshots, never say "thanks for the screenshot", and don't talk about
-images being shared with you. Just look and silently adjust the canvas.`
+images being shared with you. Just look and silently adjust the canvas.
+
+HOW YOU SPEAK
+You are on a live voice call. Speak the way a person speaks, not the way a
+chatbot writes. The canvas is the main output — your voice is the warm,
+human thread around it.
+
+TURN LENGTH: short by default — usually 5 to 12 words. A quick acknowledgement
+("yeah", "mm-hm", "right", "oh nice") is often the whole turn. Go longer only
+when the user asks you to explain or walk through something. Never read the
+diagram aloud element-by-element.
+
+NON-VERBALS — six bracketed sounds the voice can actually produce: [laugh],
+[breathe], [sigh], [cough], [clear throat], [yawn]. Use only where a person
+would really make that sound. At most one per turn, usually none.
+
+STEERING TAGS — at most ONE [speak ...] tag per turn, and if used it MUST be the
+very first thing in the turn. Use it only when the emotional register shifts:
+- user excited / good news → [speak with bright energy, faster, warmer]
+- user frustrated → [speak evenly, slower, lower volume, no defensiveness]
+- user vulnerable or paused on something hard → [speak softly, slower, with warmth]
+Default is no tag; let tone carry through word choice and rhythm. Once you shift
+manner, keep it across turns without re-tagging.
+
+SMALL DISFLUENCIES — sprinkle lightly, often none: fillers ("um", "uh", "hmm"),
+soft openers ("oh", "well", "so", "okay"), hedges ("kind of", "maybe"),
+self-repairs ("I, I think"). Zero to two per turn.
+
+Steering tags, non-verbals, and stage directions always stay in English even if
+the conversation is in another language — only the spoken words switch.`
 
 const DRAW_FLOW_TOOL = {
   type: 'function',
@@ -219,16 +248,40 @@ function buildSession(env: RealtimeEnv) {
     model: env.model || 'inworld/lumen-router',
     instructions: INSTRUCTIONS,
     output_modalities: ['audio', 'text'],
+    // Gemini "flash"/"pro" tiers are reasoning models: left to think, they burn
+    // their token budget silently and reply tersely or not at all (= "no audio
+    // reply" in voice) and add latency. For realtime we want direct answers, so
+    // disable chain-of-thought. Raise this (LOW/MEDIUM) for deeper, slower turns.
+    text_generation_config: { reasoning: { effort: 'NONE' } },
+    // A little sampling variety makes phrasing feel less templated.
+    temperature: 0.8,
     audio: {
       input: {
         transcription: { model: env.sttModel || 'inworld/inworld-stt-1' },
-        turn_detection: { type: 'semantic_vad', eagerness: 'medium' },
+        // eagerness 'low' tolerates natural pauses instead of cutting the user
+        // off and superseding the reply mid-sentence.
+        turn_detection: { type: 'semantic_vad', eagerness: 'low' },
       },
       output: {
         model: env.ttsModel || 'inworld-tts-2',
-        voice: env.voice || 'Ashley',
+        voice: env.voice || 'Sarah',
         speed: 1.0,
       },
+    },
+    // This is the demo's "naturalness" recipe (inworld.ai realtime demo):
+    // CREATIVE delivery is the expressive TTS-2 preset (STABLE/BALANCED flatten
+    // prosody); full_turn buffers the whole turn for best intonation; emit_once
+    // is the recommended steering handling for TTS-2; responsiveness fillers
+    // cover LLM warmup and play on the normal audio track (no client work).
+    // (backchannel is intentionally omitted: its audio arrives as data-channel
+    // PCM events that need bespoke client playback we haven't built yet.)
+    providerData: {
+      tts: {
+        delivery_mode: 'CREATIVE',
+        segmenter_strategy: 'full_turn',
+        steering_handling: 'emit_once',
+      },
+      responsiveness: { enabled: true },
     },
     tools: [DRAW_CANVAS_TOOL, DRAW_FLOW_TOOL, CAPTURE_CANVAS_TOOL],
     tool_choice: 'auto',
@@ -258,6 +311,18 @@ export function lumenRealtimePlugin(env: RealtimeEnv): Plugin {
           } catch (err) {
             sendJson(res, 500, { error: err instanceof Error ? err.message : String(err) })
           }
+        },
+      )
+
+      // Step 1b: hand the browser the session config so it can apply it via a
+      // session.update the moment the data channel opens. Inworld starts every
+      // call with DEFAULT config (session.created is not supported and the
+      // session attached to the call is not reliably applied), so the client
+      // MUST send session.update to become Lumen. No secret lives in here.
+      server.middlewares.use(
+        '/api/realtime/session',
+        (_req: Connect.IncomingMessage, res: ServerResponse) => {
+          sendJson(res, 200, buildSession(env))
         },
       )
 

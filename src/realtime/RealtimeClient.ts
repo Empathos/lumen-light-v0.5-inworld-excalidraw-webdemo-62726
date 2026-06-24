@@ -21,6 +21,7 @@ interface RealtimeServerEvent {
 
 const ICE_ENDPOINT = '/api/realtime/ice'
 const CALL_ENDPOINT = '/api/realtime/call'
+const SESSION_ENDPOINT = '/api/realtime/session'
 
 /**
  * Browser WebRTC client for the Inworld Realtime API.
@@ -37,6 +38,7 @@ export class RealtimeClient {
   private audioEl?: HTMLAudioElement
   private micStream?: MediaStream
   private status: RealtimeStatus = 'idle'
+  private sessionConfig?: Record<string, unknown>
 
   constructor(private readonly callbacks: RealtimeCallbacks = {}) {}
 
@@ -59,6 +61,18 @@ export class RealtimeClient {
       if (!iceRes.ok) throw new Error(`ICE request failed (${iceRes.status}): ${iceText}`)
       const iceData = JSON.parse(iceText) as { ice_servers?: RTCIceServer[] }
       const iceServers = iceData.ice_servers ?? []
+
+      // Inworld starts every call with a default persona and may greet on its
+      // own. Grab our Lumen session config now so we can apply it the instant
+      // the data channel opens, before the default config can run loose.
+      try {
+        const sessionRes = await fetch(SESSION_ENDPOINT)
+        if (sessionRes.ok) {
+          this.sessionConfig = (await sessionRes.json()) as Record<string, unknown>
+        }
+      } catch {
+        // Non-fatal: connection still works, just with default config.
+      }
 
       const pc = new RTCPeerConnection({ iceServers })
       this.pc = pc
@@ -85,7 +99,18 @@ export class RealtimeClient {
 
       const dc = pc.createDataChannel('oai-events')
       this.dc = dc
-      dc.addEventListener('open', () => this.setStatus('connected'))
+      dc.addEventListener('open', () => {
+        // Silence any default greeting that started under the default persona...
+        this.send({ type: 'response.cancel' })
+        this.send({ type: 'output_audio_buffer.clear' })
+        // ...then become Lumen for the rest of the session. Drop the read-only
+        // top-level `type` so the update isn't rejected.
+        if (this.sessionConfig) {
+          const { type: _drop, ...session } = this.sessionConfig
+          this.send({ type: 'session.update', session })
+        }
+        this.setStatus('connected')
+      })
       dc.addEventListener('message', (e) => this.handleEvent(e.data))
 
       pc.addEventListener('connectionstatechange', () => {
