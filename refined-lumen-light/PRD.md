@@ -1,7 +1,14 @@
-# Refined Lumen Light — Product Requirements (v0 Draft)
+# Lumen-Light / Beacon Table - Product Requirements (v0 Draft)
 
-Status: working draft. UX-first, high-level. This is a fresh PRD; the original
-Lumen Light repo is treated as inspiration only.
+Status: working draft. UX-first, high-level. This PRD describes the current
+canvas-first Lumen-Light / Beacon Table product direction.
+
+> **Where things live:** this PRD is the *product* view (what/why/for whom).
+> The *engineering* views live beside it — runtime contract in
+> [`docs/SPEC.md`](docs/SPEC.md), structure in
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), and the reasoning behind key
+> choices in [`docs/decisions/`](docs/decisions/). How to run and contribute is
+> in [`README.md`](README.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ---
 
@@ -171,5 +178,17 @@ Detailed architecture is deferred, but the intended direction is:
 
 ---
 
-_This draft will be refined as we work through the planning conversation. See
-`Planning-Conversation-Document.md` for the live discussion._
+## 9. Related Documents
+
+| Document | Purpose |
+|----------|---------|
+| [`docs/SPEC.md`](docs/SPEC.md) | Runtime contract: tools, commands, structure, boundaries, success criteria. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the pieces fit together and the data/event flow. |
+| [`docs/decisions/`](docs/decisions/) | ADRs — why the key technical choices were made. |
+| [`docs/TESTING.md`](docs/TESTING.md) | How changes are verified. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How we work: spec-first, decision-recording, coding standards. |
+| [`README.md`](README.md) | Overview, setup, and run instructions. |
+
+_This draft is a living document — it is updated as decisions land. Significant
+changes should be reflected here and, where they're architectural, recorded as an
+ADR in [`docs/decisions/`](docs/decisions/)._

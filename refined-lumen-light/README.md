@@ -10,6 +10,17 @@ the assistant draws on it with you.
 
 See [`PRD.md`](./PRD.md) for the product vision and scope.
 
+## Documentation
+
+| Document | What's in it |
+|----------|--------------|
+| [`PRD.md`](./PRD.md) | Product vision, users, capabilities, scope. |
+| [`docs/SPEC.md`](./docs/SPEC.md) | Runtime contract (tools), commands, structure, boundaries, success criteria. |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Components and the data/event flow. |
+| [`docs/decisions/`](./docs/decisions/) | ADRs — the *why* behind key choices. |
+| [`docs/TESTING.md`](./docs/TESTING.md) | How changes are verified. |
+| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | How to work on this project. |
+
 ## Status
 
 Early scaffold. Working today:
@@ -17,21 +28,25 @@ Early scaffold. Working today:
 - TLDraw canvas as the main surface.
 - **OpenAI Realtime voice + text session** (`gpt-realtime-2` over WebRTC) where
   the model calls a `draw_flow` tool to diagram the conversation live.
-- An **offline fallback**: with no live session, typed text uses a deterministic
-  local parser so the app is useful with no keys/network.
 
 Both voice and typed text drive the **same** tool calls / canvas actions, so the
 input modality is fully decoupled from canvas behavior.
 
 ## Setup
 
-Create `.env.local` (gitignored) with your OpenAI key:
+Copy the example env file (gitignored) and add your OpenAI key:
+
+```bash
+cp .env.local.example .env.local
+```
 
 ```bash
 OPENAI_API_KEY=sk-...
 OPENAI_REALTIME_MODEL=gpt-realtime-2
 OPENAI_REALTIME_VOICE=marin
 ```
+
+The key is required for the realtime voice/text collaborator.
 
 > Security: the API key is used **only** by the dev server to mint short-lived
 > ephemeral tokens (`/api/realtime/token`). It is never bundled into the browser.
@@ -50,19 +65,21 @@ Open the printed URL (default http://localhost:5180/).
 loud. The agent speaks back and diagrams what you say on the canvas.
 
 **Text:** type into the panel and press Enter. In a live session this goes to the
-realtime model; offline it uses the local parser. For example:
+realtime model. For example:
 
 ```text
 research -> draft -> review -> ship
 ```
 
-## Other commands
+## Commands
 
-```bash
-npm run build      # typecheck + production build
-npm run typecheck  # types only
-npm run preview    # preview the production build
-```
+| Command | Description |
+|---------|-------------|
+| `npm install` | Install dependencies. |
+| `npm run dev` | Start the dev server (http://localhost:5180). |
+| `npm run build` | Typecheck + production build. |
+| `npm run typecheck` | Types only (no emit). |
+| `npm run preview` | Preview the production build. |
 
 ## Architecture (the important seam)
 
@@ -72,9 +89,7 @@ the same `draw_flow` action, which is projected onto the canvas:
 ```text
 voice (mic) ─┐                              ┌─► draw_flow tool call ─┐
              ├─► OpenAI Realtime session ───┤                        ├─► canvas
-text (live) ─┘     (gpt-realtime-2)         └─► spoken/text reply    │   (TLDraw)
-                                                                     │
-text (offline) ─► MockAssistantProvider ──► draw_flow diagram ───────┘
+text (live) ─┘     (gpt-realtime-2)         └─► spoken/text reply    ┘   (TLDraw)
 ```
 
 Server (dev):
@@ -95,10 +110,9 @@ Client:
 - `src/canvas/normalizeFlow.ts` — defensively coerces tool-call args into a valid
   `FlowDiagram` before touching the canvas.
 - `src/assistant/types.ts` — shared `FlowDiagram` / action / provider contract.
-- `src/assistant/mockProvider.ts` — deterministic offline text → flow provider.
 - `src/canvas/LumenCanvas.tsx` — the TLDraw surface.
 - `src/ui/ConversationPanel.tsx` — text input + session controls + transcripts.
-- `src/App.tsx` — wires inputs (realtime/offline) → tool calls → canvas.
+- `src/App.tsx` — wires inputs → tool calls → canvas.
 
 ### Canvas vocabulary
 
@@ -139,3 +153,12 @@ light-blue, yellow, orange, green, light-green, light-red, red, white`; fills
 - Richer diagram types beyond linear flows.
 - Generated images / media on the canvas.
 - Production token endpoint (the current one is a Vite dev-server middleware).
+
+## Contributing
+
+We work spec-first and record significant decisions as ADRs. Before changing
+behavior, skim [`CONTRIBUTING.md`](./CONTRIBUTING.md), update
+[`docs/SPEC.md`](./docs/SPEC.md) if the contract changes, and add an ADR under
+[`docs/decisions/`](./docs/decisions/) for architectural choices. Run
+`npm run typecheck` and `npm run build` before committing, and never commit
+`.env.local`.

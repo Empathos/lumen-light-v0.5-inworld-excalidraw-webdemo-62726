@@ -4,13 +4,13 @@
 
 Lumen Light has a strong product spine and a working technical base. The repo is
 not just speculative docs: the evidence-linked briefing review loop has tests,
-the refined TLDraw app builds, the OpenAI Realtime WebRTC path matches the
+the canvas-first TLDraw app builds, the OpenAI Realtime WebRTC path matches the
 official ephemeral-token pattern, and the older whiteboard prototype has broad
 coverage.
 
 The main product risk is directional split. The top-level Lumen Light model is
 grounded briefing with source spans, staging, accepted artifacts, and export
-packets. `refined-lumen-light` is a canvas-first live collaborator. Both are
+packets. The current canvas-first app is a live collaborator. Both are
 valuable, but the MVP should deliberately merge them around one hero loop:
 
 ```text
@@ -41,8 +41,8 @@ source / conversation -> agent briefing -> highlight evidence
 - Source anchoring is cautious: exact text plus prefix/suffix context is used
   when available, ambiguous spans are skipped rather than mis-anchored.
 - Canvas projection is correctly treated as a view, not durable truth. Both the
-  Excalidraw projection and refined TLDraw app preserve this principle.
-- `refined-lumen-light` has the right technical seam: voice and text both route
+  Excalidraw projection and canvas-first TLDraw app preserve this principle.
+- The canvas-first app has the right technical seam: voice and text both route
   to the same tool handlers before touching the canvas.
 - The OpenAI Realtime implementation uses the documented WebRTC +
   ephemeral-token shape: server mints a client secret, browser posts SDP to
@@ -73,7 +73,7 @@ The repo has two strong halves that are not yet one product:
 
 - The top-level briefing review demo proves evidence, staging, acceptance, and
   export.
-- The refined app proves live voice/text -> tools -> TLDraw canvas.
+- The canvas-first app proves live voice/text -> tools -> TLDraw canvas.
 
 What is missing is the integrated Beacon Table loop where the same live agent
 can point at source evidence, draw the structure, and produce reviewable
@@ -85,11 +85,11 @@ artifacts in one interface.
    That would make the demo flashier but less defensible.
 2. Product drift toward "review workflow" without the live shared-surface magic.
    That would make the product trustworthy but less alive.
-3. The refined app currently has no persistence/export path, so the user does
+3. The canvas-first app currently has no persistence/export path, so the user does
    not clearly leave with a durable record.
-4. The document briefing mode is still planned, not implemented, in the refined
+4. The document briefing mode is still planned, not implemented, in the canvas-first
    app.
-5. There are no unit tests yet for the refined app's pure canvas normalizers,
+5. There are no unit tests yet for the canvas-first app's pure canvas normalizers,
    even though the docs name them as priority targets.
 6. The Realtime endpoint is currently Vite dev middleware. Production needs a
    trusted endpoint with a safety identifier and deployment-specific controls.
@@ -99,7 +99,7 @@ artifacts in one interface.
 
 Build one integrated, deterministic hero demo before expanding infrastructure:
 
-1. In `refined-lumen-light`, add a source pane with a synthetic document.
+1. In the canvas-first app, add a source pane with a synthetic document.
 2. Add `highlight_source` and `focus_source` tools.
 3. Add a local staged-artifact queue using the proven top-level review-state
    rules.
@@ -119,8 +119,8 @@ available to the Realtime voice session.
 
 ## Working Judgment
 
-The right path is not to choose between the original Lumen Light and the refined
-canvas app. The product is the fusion: Beacon Table should feel like a live
+The right path is not to choose between the original Lumen Light contract and the
+canvas-first app. The product is the fusion: Beacon Table should feel like a live
 thinking canvas, but its durable output must remain evidence-linked,
 reviewable, and exportable.
 
