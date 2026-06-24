@@ -41,7 +41,7 @@ OPENAI_REALTIME_VOICE=marin
 ## Project Structure
 
 ```text
-refined-lumen-light/              # current app directory during trunk promotion
+./                            # Lumen-Light root trunk
 ├── index.html
 ├── package.json, tsconfig*.json, vite.config.ts
 ├── server/
