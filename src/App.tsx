@@ -6,6 +6,13 @@ import { drawFlowDiagram } from './canvas/drawFlow'
 import { normalizeFlowDiagram } from './canvas/normalizeFlow'
 import { drawCanvasElements, normalizeCanvasElements } from './canvas/drawCanvas'
 import { addImageToCanvas } from './canvas/addImage'
+import {
+  openDocument,
+  highlightPassage,
+  getDocument,
+  briefFromCanvas,
+  initDocWindow,
+} from './canvas/docWindow'
 import { ConversationPanel } from './ui/ConversationPanel'
 import { MockAssistantProvider } from './assistant/mockProvider'
 import { RealtimeClient, type RealtimeStatus } from './realtime/RealtimeClient'
@@ -27,6 +34,8 @@ export function App() {
 
   const handleReady = useCallback((api: ExcalidrawImperativeAPI) => {
     apiRef.current = api
+    // Re-bind/repopulate a persisted briefing window after reload or back-nav.
+    initDocWindow(api)
   }, [])
 
   const drawFlowFromArgs = useCallback((args: unknown) => {
@@ -72,6 +81,62 @@ export function App() {
     }
   }, [])
 
+  const openDocumentFromArgs = useCallback((args: unknown) => {
+    const api = apiRef.current
+    if (!api) return { ok: false, error: 'canvas not ready' }
+    const a = (args ?? {}) as Record<string, unknown>
+    const markdown =
+      typeof a.markdown === 'string'
+        ? a.markdown
+        : typeof a.content === 'string'
+          ? a.content
+          : ''
+    if (!markdown.trim()) return { ok: false, error: 'missing markdown' }
+    const title = typeof a.title === 'string' ? a.title : undefined
+    return openDocument(api, { title, markdown })
+  }, [])
+
+  const highlightFromArgs = useCallback((args: unknown) => {
+    const a = (args ?? {}) as Record<string, unknown>
+    return highlightPassage({
+      section: typeof a.section === 'string' ? a.section : undefined,
+      text: typeof a.text === 'string' ? a.text : undefined,
+      clear: a.clear === true,
+    })
+  }, [])
+
+  const readDocument = useCallback(() => getDocument(), [])
+
+  const webSearchFromArgs = useCallback(async (args: unknown) => {
+    const a = (args ?? {}) as Record<string, unknown>
+    const query = typeof a.query === 'string' ? a.query.trim() : ''
+    if (!query) return { ok: false, error: 'missing query' }
+    try {
+      const resp = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      })
+      const data = (await resp.json()) as {
+        query?: string
+        answer?: string
+        results?: { title: string; url: string; snippet: string }[]
+        error?: string
+      }
+      if (!resp.ok) return { ok: false, error: data.error || 'search failed' }
+      return { ok: true, query: data.query, answer: data.answer, results: data.results ?? [] }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  }, [])
+
+  const briefFromCanvasFromArgs = useCallback((args: unknown) => {
+    const api = apiRef.current
+    if (!api) return { ok: false, error: 'canvas not ready' }
+    const a = (args ?? {}) as Record<string, unknown>
+    return briefFromCanvas(api, { title: typeof a.title === 'string' ? a.title : undefined })
+  }, [])
+
   const captureCanvas = useCallback(async () => {
     const api = apiRef.current
     if (!api) return { ok: false, error: 'canvas not ready' }
@@ -80,7 +145,14 @@ export function App() {
     try {
       const blob = await exportToBlob({
         elements,
-        appState: { ...api.getAppState(), exportBackground: true, viewBackgroundColor: '#ffffff' },
+        appState: {
+          ...api.getAppState(),
+          // Force a light render for the AI screenshot regardless of the live UI
+          // theme, so the self-correction loop sees clean, legible colors.
+          theme: 'light',
+          exportBackground: true,
+          viewBackgroundColor: '#ffffff',
+        },
         files: api.getFiles(),
         mimeType: 'image/png',
         exportPadding: 32,
@@ -105,7 +177,27 @@ export function App() {
     // Place a local data URL directly (no API call) for testing image rendering.
     w.__lumenAddImage = (dataURL: string) =>
       apiRef.current ? addImageToCanvas(apiRef.current, dataURL) : undefined
-  }, [drawCanvasFromArgs, captureCanvas, generateImageFromArgs])
+    w.__lumenOpenDoc = (markdown: string, title?: string) =>
+      openDocumentFromArgs({ markdown, title })
+    w.__lumenHighlight = (section?: string, text?: string) =>
+      highlightFromArgs({ section, text })
+    w.__lumenReadDoc = () => readDocument()
+    w.__lumenBriefFromCanvas = (title?: string) => briefFromCanvasFromArgs({ title })
+    w.__lumenSceneInfo = () =>
+      (apiRef.current?.getSceneElements() ?? [])
+        .filter((e) => !e.isDeleted)
+        .map((e) => ({ type: e.type, id: e.id }))
+    w.__lumenWebSearch = (query: string) => webSearchFromArgs({ query })
+  }, [
+    drawCanvasFromArgs,
+    captureCanvas,
+    generateImageFromArgs,
+    openDocumentFromArgs,
+    highlightFromArgs,
+    readDocument,
+    briefFromCanvasFromArgs,
+    webSearchFromArgs,
+  ])
 
   const connect = useCallback(() => {
     if (clientRef.current) return
@@ -120,12 +212,28 @@ export function App() {
         if (name === 'draw_flow') return drawFlowFromArgs(args)
         if (name === 'capture_canvas') return captureCanvas()
         if (name === 'generate_image') return generateImageFromArgs(args)
+        if (name === 'open_document') return openDocumentFromArgs(args)
+        if (name === 'highlight_passage') return highlightFromArgs(args)
+        if (name === 'read_document') return readDocument()
+        if (name === 'brief_from_canvas') return briefFromCanvasFromArgs(args)
+        if (name === 'web_search') return webSearchFromArgs(args)
         return { ok: false, error: `unknown tool: ${name}` }
       },
     })
     clientRef.current = client
     void client.connect()
-  }, [addMessage, captureCanvas, drawCanvasFromArgs, drawFlowFromArgs, generateImageFromArgs])
+  }, [
+    addMessage,
+    captureCanvas,
+    drawCanvasFromArgs,
+    drawFlowFromArgs,
+    generateImageFromArgs,
+    openDocumentFromArgs,
+    highlightFromArgs,
+    readDocument,
+    briefFromCanvasFromArgs,
+    webSearchFromArgs,
+  ])
 
   const disconnect = useCallback(() => {
     clientRef.current?.disconnect()
