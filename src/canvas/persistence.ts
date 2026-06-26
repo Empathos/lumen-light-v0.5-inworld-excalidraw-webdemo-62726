@@ -1,0 +1,46 @@
+import { serializeAsJSON } from '@excalidraw/excalidraw'
+import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/types'
+import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
+
+/**
+ * Lightweight localStorage persistence for the canvas. Without this the whole
+ * scene (drawings, images, and the briefing window) lives only in memory and
+ * vanishes on refresh / back-navigation. We serialize with Excalidraw's own
+ * helper so element/appState shapes stay valid across versions.
+ */
+
+const SCENE_KEY = 'lumen-scene-v1'
+
+export interface RestoredScene {
+  elements: ExcalidrawElement[]
+  appState: Partial<AppState>
+  files: BinaryFiles
+}
+
+export function loadScene(): RestoredScene | null {
+  try {
+    const raw = localStorage.getItem(SCENE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<RestoredScene> & { elements?: unknown }
+    if (!parsed || !Array.isArray(parsed.elements)) return null
+    return {
+      elements: parsed.elements as ExcalidrawElement[],
+      appState: (parsed.appState as Partial<AppState>) ?? {},
+      files: (parsed.files as BinaryFiles) ?? {},
+    }
+  } catch {
+    return null
+  }
+}
+
+export function saveScene(
+  elements: readonly ExcalidrawElement[],
+  appState: AppState,
+  files: BinaryFiles,
+): void {
+  try {
+    localStorage.setItem(SCENE_KEY, serializeAsJSON(elements, appState, files, 'local'))
+  } catch {
+    // Quota or serialization failures are non-fatal; the canvas still works.
+  }
+}
