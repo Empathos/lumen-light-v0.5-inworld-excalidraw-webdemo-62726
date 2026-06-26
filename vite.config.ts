@@ -15,6 +15,8 @@ export default defineConfig(({ mode }) => {
         ttsModel: env.INWORLD_TTS_MODEL,
         geminiApiKey: env.GEMINI_API_KEY,
         imageModel: env.GEMINI_IMAGE_MODEL,
+        tavilyApiKey: env.TAVILY_API_KEY,
+        braveApiKey: env.BRAVE_API_KEY,
       }),
     ],
     // Excalidraw reads process.env.IS_PREACT at runtime; in a browser/Vite build

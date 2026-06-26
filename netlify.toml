@@ -1,0 +1,19 @@
+# Netlify deploy config for Lumen Light.
+#
+# The static Vite build is served from the CDN; the /api/* endpoints run as
+# serverless functions (netlify/functions/*.mts) that reuse server/backend.ts,
+# so API keys stay server-side. Set these env vars in the Netlify UI
+# (Site settings -> Environment variables) — same names as .env.local:
+#   INWORLD_API_KEY, INWORLD_REALTIME_MODEL, INWORLD_REALTIME_VOICE,
+#   GEMINI_API_KEY, and ONE of TAVILY_API_KEY / BRAVE_API_KEY.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  node_bundler = "esbuild"
+  directory = "netlify/functions"
