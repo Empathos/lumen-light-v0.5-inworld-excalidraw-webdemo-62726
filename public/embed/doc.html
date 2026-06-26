@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lumen Document</title>
+    <style>
+      :root {
+        --paper: #fbfbf9;
+        --ink: #1c2024;
+        --muted: #6b7280;
+        --rule: #e6e6e0;
+        --hl: #ffe27a;
+        --hl-edge: #f5c518;
+        --accent: #6ea8fe;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        flex-direction: column;
+      }
+      #bar {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--rule);
+        background: #f4f4ef;
+      }
+      #bar-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #edit-toggle {
+        flex: 0 0 auto;
+        font: 600 12px system-ui, sans-serif;
+        color: var(--ink);
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 5px 12px;
+        cursor: pointer;
+      }
+      #edit-toggle:hover { border-color: var(--accent); }
+      #scroll { flex: 1 1 auto; position: relative; min-height: 0; }
+      #doc {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        padding: 22px 28px 80px;
+        scroll-behavior: smooth;
+      }
+      #editor {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        resize: none;
+        padding: 22px 28px;
+        background: var(--paper);
+        color: var(--ink);
+        font: 14px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+        outline: none;
+      }
+      [hidden] { display: none !important; }
+      h1, h2, h3, h4, h5, h6 { line-height: 1.25; margin: 1.3em 0 0.5em; }
+      h1 { font-size: 1.6em; }
+      h2 { font-size: 1.32em; }
+      h3 { font-size: 1.14em; }
+      h4, h5, h6 { font-size: 1em; }
+      p { margin: 0.7em 0; }
+      ul, ol { margin: 0.7em 0; padding-left: 1.4em; }
+      li { margin: 0.25em 0; }
+      blockquote {
+        margin: 0.8em 0;
+        padding: 0.4em 0 0.4em 14px;
+        border-left: 3px solid var(--rule);
+        color: var(--muted);
+      }
+      pre {
+        background: #f1f1ec;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        padding: 12px 14px;
+        overflow-x: auto;
+        font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; }
+      :not(pre) > code {
+        background: #ececE5;
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      a { color: #2563c9; }
+      [data-block-id] {
+        scroll-margin: 50% 0;
+        border-radius: 6px;
+        transition: background-color 0.35s ease, box-shadow 0.35s ease;
+      }
+      .lumen-block-active {
+        background: rgba(110, 168, 254, 0.12);
+        box-shadow: -10px 0 0 rgba(110, 168, 254, 0.12), 10px 0 0 rgba(110, 168, 254, 0.12);
+      }
+      mark.lumen-hl {
+        background: linear-gradient(180deg, transparent 8%, var(--hl) 8%);
+        box-shadow: 0 0 0 1px var(--hl-edge) inset;
+        border-radius: 3px;
+        padding: 0 1px;
+        color: inherit;
+      }
+      #empty { color: var(--muted); font-style: italic; margin-top: 40px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div id="bar">
+      <div id="bar-title"></div>
+      <button id="edit-toggle" type="button">Edit</button>
+    </div>
+    <div id="scroll">
+      <div id="doc"><div id="empty">Waiting for document…</div></div>
+      <textarea
+        id="editor"
+        hidden
+        placeholder="Paste or type your document here (Markdown supported), then press Done…"
+      ></textarea>
+    </div>
+    <script>
+      ;(function () {
+        const CH = 'lumen-doc'
+        const doc = document.getElementById('doc')
+        const editor = document.getElementById('editor')
+        const barTitle = document.getElementById('bar-title')
+        const toggle = document.getElementById('edit-toggle')
+
+        let activeBlock = null
+        let editing = false
+        let firstSet = true
+        let currentTitle = ''
+        let currentMarkdown = ''
+
+        function post(msg) {
+          try {
+            window.parent.postMessage(Object.assign({ source: CH }, msg), '*')
+          } catch (_) {}
+        }
+
+        function clearHighlights() {
+          if (activeBlock) {
+            activeBlock.classList.remove('lumen-block-active')
+            activeBlock = null
+          }
+          doc.querySelectorAll('mark.lumen-hl').forEach((m) => {
+            const parent = m.parentNode
+            while (m.firstChild) parent.insertBefore(m.firstChild, m)
+            parent.removeChild(m)
+            parent.normalize()
+          })
+        }
+
+        function renderView(title, html) {
+          clearHighlights()
+          barTitle.textContent = title || ''
+          doc.innerHTML = '<div id="doc-body"></div>'
+          doc.querySelector('#doc-body').innerHTML = html || '<div id="empty">Empty document.</div>'
+        }
+
+        function showEditing(on) {
+          editing = on
+          editor.hidden = !on
+          doc.hidden = on
+          toggle.textContent = on ? 'Done' : 'Edit'
+          if (on) {
+            editor.value = currentMarkdown
+            editor.focus()
+          }
+        }
+
+        toggle.addEventListener('click', function () {
+          if (editing) {
+            currentMarkdown = editor.value
+            showEditing(false)
+            // Parent owns the Markdown renderer; it will echo back a `set` with
+            // freshly rendered HTML (and the refreshed section outline).
+            post({ type: 'edit', title: currentTitle, markdown: currentMarkdown })
+          } else {
+            showEditing(true)
+          }
+        })
+
+        function norm(s) {
+          return (s || '').replace(/\s+/g, ' ').trim().toLowerCase()
+        }
+
+        function wrapText(el, text) {
+          const needle = norm(text)
+          if (!needle) return false
+          const probe = needle.length > 60 ? needle.slice(0, 60) : needle
+          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null)
+          let node
+          while ((node = walker.nextNode())) {
+            const idx = node.nodeValue.toLowerCase().indexOf(probe)
+            if (idx !== -1) {
+              const len = Math.min(needle.length, node.nodeValue.length - idx)
+              const range = document.createRange()
+              range.setStart(node, idx)
+              range.setEnd(node, idx + len)
+              const mark = document.createElement('mark')
+              mark.className = 'lumen-hl'
+              try {
+                range.surroundContents(mark)
+                return true
+              } catch (_) {
+                return false
+              }
+            }
+          }
+          return false
+        }
+
+        function findBlock(blockId) {
+          if (!blockId) return null
+          const id = String(blockId)
+          const esc = window.CSS && CSS.escape ? CSS.escape(id) : id
+          return (
+            doc.querySelector('[data-block-id="' + esc + '"]') ||
+            doc.querySelector('[data-section="' + esc + '"]')
+          )
+        }
+
+        function findBlockByText(text) {
+          const needle = norm(text)
+          if (!needle) return null
+          const probe = needle.length > 60 ? needle.slice(0, 60) : needle
+          const blocks = doc.querySelectorAll('[data-block-id]')
+          for (const b of blocks) {
+            if (norm(b.textContent).indexOf(probe) !== -1) return b
+          }
+          return null
+        }
+
+        function highlight(blockId, text) {
+          if (editing) showEditing(false)
+          clearHighlights()
+          let el = findBlock(blockId)
+          if (text) {
+            if (!el || !wrapText(el, text)) {
+              const byText = findBlockByText(text)
+              if (byText) {
+                el = byText
+                wrapText(el, text)
+              }
+            }
+          }
+          if (!el) return false
+          activeBlock = el
+          el.classList.add('lumen-block-active')
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          return true
+        }
+
+        function onSet(d) {
+          currentTitle = d.title || ''
+          currentMarkdown = typeof d.markdown === 'string' ? d.markdown : currentMarkdown
+          renderView(currentTitle, d.html)
+          // Auto-open the editor the first time if there's nothing to read yet,
+          // so the user can paste straight in.
+          if (firstSet && !norm(currentMarkdown)) {
+            showEditing(true)
+          } else if (!editing) {
+            showEditing(false)
+          }
+          firstSet = false
+        }
+
+        let gotContent = false
+        window.addEventListener('message', function (e) {
+          const d = e.data
+          if (!d || d.source !== CH) return
+          gotContent = true
+          if (d.type === 'set') onSet(d)
+          else if (d.type === 'highlight') highlight(d.blockId, d.text)
+          else if (d.type === 'clear') clearHighlights()
+        })
+
+        // Re-announce until the parent answers. On a restored canvas the iframe
+        // may load before the parent attaches its listener, so a single `ready`
+        // can be missed.
+        post({ type: 'ready' })
+        const readyTimer = setInterval(function () {
+          if (gotContent) {
+            clearInterval(readyTimer)
+            return
+          }
+          post({ type: 'ready' })
+        }, 400)
+        setTimeout(function () {
+          clearInterval(readyTimer)
+        }, 12000)
+      })()
+    </script>
+  </body>
+</html>
