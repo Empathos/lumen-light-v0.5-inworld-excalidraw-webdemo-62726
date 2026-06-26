@@ -1,6 +1,6 @@
 # Live Voice Eval Scorecard
 
-Branch: `v0.5-inworld-62426`
+Branch: `v0.5-inworld-62426-excalidraw`
 
 Purpose: run one short, honest Inworld/Lumen Light voice check before adding more
 provider abstraction or orchestration. The goal is to learn whether this path
