@@ -5,7 +5,7 @@ index) as a record. Fixes should reference the bug id in the commit message.
 
 | ID | Title | Severity | Status |
 |----|-------|----------|--------|
-| [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | Resolved (canvas re-grounding) |
+| [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | ✅ Resolved |
 
 ---
 
@@ -14,8 +14,8 @@ index) as a record. Fixes should reference the bug id in the commit message.
 **Assistant loses awareness of the canvas (and prior conversation) across sessions**
 
 - **Severity:** High (breaks continuity — the core "come back to your thinking" promise)
-- **Status:** Resolved — 2026-06-28 (canvas re-grounding, gap #1). Conversation
-  persistence (gap #2) is deferred; see Remaining below.
+- **Status:** ✅ Resolved — 2026-06-28. Gap #1 (canvas re-grounding) and gap #2
+  (conversation persistence + recap) both shipped.
 - **Reported:** 2026-06-28
 
 ### Steps to reproduce
@@ -64,16 +64,17 @@ note that auth + a platform come later):
   identity land with authentication + the platform.
 
 ### Resolution
-Gap #1 (re-grounding) is fixed by re-deriving context from the canvas on every
-session connect, per [ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md):
-`src/canvas/summarizeScene.ts` builds a compact textual description of the live
-scene (shape/connector/image counts, labels, open-document title) and
-`RealtimeClient` injects it as silent context the moment the data channel opens.
-Derived, not stored — so it can't drift from what the user sees.
+On every session connect, `RealtimeClient` injects a silent grounding context
+item the moment the data channel opens, combining:
 
-### Remaining (deferred)
-- **Conversation memory (gap #2):** the *dialogue* is still not persisted — only
-  the canvas artifact grounds the model. Persisting/summarizing the transcript is
-  a future complement.
-- **Out of scope here:** authentication / user accounts; cross-device or
-  server-side session storage (land with the platform).
+- **Gap #1 — canvas** ([ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md)):
+  `src/canvas/summarizeScene.ts` describes the live scene (shape/connector/image
+  counts, labels, open-document title). Derived, not stored — can't drift.
+- **Gap #2 — conversation** ([ADR-0010](decisions/ADR-0010-persist-conversation-transcript.md)):
+  `src/assistant/transcriptStore.ts` persists the transcript to `localStorage`
+  (`lumen-transcript-v1`), restores it on load, and recaps the last ~12 turns.
+
+### Remaining (deferred — separate from this bug)
+- **Cross-device / server-side** session storage and identity — land with
+  authentication + the platform. The current persistence is device-local
+  (`localStorage`).
