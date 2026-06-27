@@ -156,6 +156,18 @@ a synthesized answer plus source results (`title, url, snippet`).
   canvas into the briefing window. Prefers the selection; else the largest text
   block.
 
+### Session re-grounding (cross-session continuity)
+
+On every session connect, if the canvas is non-empty, the client injects a compact
+**textual summary of the current scene** (shape/connector/image counts, labels,
+open-document title) as the first conversation item, framed as automated context
+(no `response.create`, and the model must not thank the user for it). This keeps a
+resumed session referentially consistent with the board it is working on. The
+summary is *derived* from the live scene each time (never stored), so it cannot
+drift from what the user sees. Source: `src/canvas/summarizeScene.ts`, injected via
+`RealtimeClient`'s `getCanvasGrounding` callback. See
+[ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md).
+
 ### Behavioral rules
 
 - Invalid enum values / malformed elements are dropped during normalization.
