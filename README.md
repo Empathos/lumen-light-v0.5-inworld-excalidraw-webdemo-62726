@@ -32,6 +32,18 @@ Branch `v0.5-inworld-62426`. Working today:
   fallback); the voice is Inworld's `inworld-tts-2` with `semantic_vad`.
 - An **offline fallback**: with no live session, typed text uses a deterministic
   local parser so the app is useful with no keys/network.
+- **Live web search (`web_search`)** — never frozen at a training cutoff. The
+  agent looks things up on the open web mid-conversation, synthesizes an answer
+  *with sources*, and can diagram or brief the findings on the spot. The canvas
+  becomes a live research surface, not a static whiteboard.
+- **Website screenshots on the canvas (`screenshot_website`)** — say "pull up
+  that page" and the live web page is captured and dropped onto the board as an
+  image: no screen-share, no copy-paste, identical on desktop and mobile. Chain
+  it with `web_search` to *find* a source and *show* it in a single move.
+- **Briefing mode from pasted text (`brief_from_canvas`)** — paste a block of
+  text onto the canvas, ask to be briefed, and the agent lifts it into a focused
+  reading window and walks you through it, highlighting passage by passage as it
+  speaks — like a presenter taking a room through a document.
 
 Both voice and typed text drive the **same** tool calls / canvas actions, so the
 input modality is fully decoupled from canvas behavior.
@@ -174,8 +186,9 @@ light-blue, yellow, orange, green, light-green, light-red, red, white`; fills
 
 ## Roadmap (near-term)
 
-- Document briefing mode: load a document, brief through it, highlight passages,
-  draw connections (add `highlight_source` + `focus_source` tools).
+- Richer briefing sources: the canvas-paste briefing path (`brief_from_canvas` +
+  `highlight_passage`) is live — extend it with file/PDF upload and OCR so longer
+  documents can be loaded directly.
 - Richer diagram types beyond linear flows.
 - Generated images / media on the canvas.
 - Router experiments: A/B model variants and conditional (metadata/CEL) routing.
