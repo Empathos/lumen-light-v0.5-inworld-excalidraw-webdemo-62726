@@ -7,6 +7,7 @@ import { drawFlowDiagram } from './canvas/drawFlow'
 import { normalizeFlowDiagram } from './canvas/normalizeFlow'
 import { drawCanvasElements, normalizeCanvasElements } from './canvas/drawCanvas'
 import { addImageToCanvas } from './canvas/addImage'
+import { summarizeScene } from './canvas/summarizeScene'
 import {
   openDocument,
   highlightPassage,
@@ -277,6 +278,7 @@ export function App() {
     const client = new RealtimeClient({
       onStatus: (s) => setStatus(s),
       onMic: (enabled) => setMicOn(enabled),
+      getCanvasGrounding: () => summarizeScene(apiRef.current),
       onUserTranscript: (text) => addMessage({ role: 'user', text }),
       onAssistantTranscript: (text) => addMessage({ role: 'assistant', text }),
       onError: (message) => addMessage({ role: 'assistant', text: `[error] ${message}` }),
