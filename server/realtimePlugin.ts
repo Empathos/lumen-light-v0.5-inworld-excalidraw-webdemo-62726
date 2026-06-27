@@ -7,6 +7,7 @@ import {
   createCall,
   generateImage,
   runWebSearch,
+  screenshotWebsite,
 } from './backend'
 
 /**
@@ -20,6 +21,7 @@ import {
  *   POST /api/realtime/call     -> Inworld calls (SDP offer -> answer)
  *   POST /api/image/generate    -> Gemini image generation
  *   POST /api/search            -> web search (Tavily/Brave)
+ *   POST /api/screenshot        -> website screenshot (thum.io)
  */
 
 export type { RealtimeEnv }
@@ -131,6 +133,28 @@ export function lumenRealtimePlugin(env: RealtimeEnv): Plugin {
             }
             const { answer, results } = await runWebSearch(env, query.trim())
             sendJson(res, 200, { query: query.trim(), answer, results })
+          } catch (err) {
+            sendJson(res, 500, { error: err instanceof Error ? err.message : String(err) })
+          }
+        },
+      )
+
+      server.middlewares.use(
+        '/api/screenshot',
+        async (req: Connect.IncomingMessage, res: ServerResponse) => {
+          if (req.method !== 'POST') {
+            sendJson(res, 405, { error: 'Use POST.' })
+            return
+          }
+          try {
+            const body = await readBody(req)
+            const { url } = JSON.parse(body || '{}') as { url?: string }
+            if (!url || typeof url !== 'string' || !url.trim()) {
+              sendJson(res, 400, { error: 'Missing url.' })
+              return
+            }
+            const { status, body: out } = await screenshotWebsite(env, url.trim())
+            sendJson(res, status, out)
           } catch (err) {
             sendJson(res, 500, { error: err instanceof Error ? err.message : String(err) })
           }
