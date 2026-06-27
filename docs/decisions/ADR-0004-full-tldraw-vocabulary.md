@@ -1,7 +1,10 @@
 # ADR-0004: Expose the full TLDraw vocabulary via `draw_canvas`
 
 ## Status
-Accepted
+Superseded by [ADR-0008](ADR-0008-excalidraw-canvas.md) — the canvas engine moved
+from TLDraw to Excalidraw, which narrows the geo vocabulary to three closed
+shapes. The element model and normalization approach below still apply; the
+TLDraw-specific shape set does not. Kept as a historical record.
 
 ## Date
 2026-06-24
