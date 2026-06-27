@@ -27,9 +27,11 @@ the model's next reply rather than triggering one.
 
 - `src/canvas/summarizeScene.ts` walks the live Excalidraw scene → shape/connector/
   image counts, text/label list, and the open briefing document's title + length.
-- `RealtimeClient` gains a `getCanvasGrounding()` callback, invoked in the
-  data-channel `open` handler after `session.update`.
-- `App` supplies `() => summarizeScene(apiRef.current)`.
+- `RealtimeClient` gains a session-grounding callback, invoked in the
+  data-channel `open` handler after `session.update`. (Later generalized to
+  `getSessionGrounding` in [ADR-0010](ADR-0010-persist-conversation-transcript.md)
+  to also carry a conversation recap.)
+- `App` supplies the canvas summary via `summarizeScene(apiRef.current)`.
 
 ## Alternatives Considered
 

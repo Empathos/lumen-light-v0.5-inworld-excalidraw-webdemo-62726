@@ -158,15 +158,21 @@ a synthesized answer plus source results (`title, url, snippet`).
 
 ### Session re-grounding (cross-session continuity)
 
-On every session connect, if the canvas is non-empty, the client injects a compact
-**textual summary of the current scene** (shape/connector/image counts, labels,
-open-document title) as the first conversation item, framed as automated context
-(no `response.create`, and the model must not thank the user for it). This keeps a
-resumed session referentially consistent with the board it is working on. The
-summary is *derived* from the live scene each time (never stored), so it cannot
-drift from what the user sees. Source: `src/canvas/summarizeScene.ts`, injected via
-`RealtimeClient`'s `getCanvasGrounding` callback. See
-[ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md).
+On every session connect, the client injects a compact **grounding** as the first
+conversation item, framed as automated context (no `response.create`, and the
+model must not thank the user for it), so a resumed session knows both the board
+and the dialogue it is continuing:
+
+- **Canvas summary** — `src/canvas/summarizeScene.ts` describes the live scene
+  (shape/connector/image counts, labels, open-document title). *Derived* from the
+  scene each time, so it cannot drift from what the user sees.
+  ([ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md))
+- **Conversation recap** — `src/assistant/transcriptStore.ts` replays the last
+  ~12 turns of the persisted transcript (`lumen-transcript-v1`).
+  ([ADR-0010](decisions/ADR-0010-persist-conversation-transcript.md))
+
+Both are concatenated and injected via `RealtimeClient`'s `getSessionGrounding`
+callback. Either may be empty (e.g. a blank canvas or a first-ever session).
 
 ### Behavioral rules
 

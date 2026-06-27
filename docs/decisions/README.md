@@ -14,6 +14,7 @@ deleted; when a decision changes, a new ADR supersedes the old one.
 | [0007](ADR-0007-inworld-realtime-provider.md) | Inworld Realtime provider (proxied signaling + router) | Accepted (branch `v0.5-inworld-62426`) |
 | [0008](ADR-0008-excalidraw-canvas.md) | Excalidraw as the canvas engine (supersedes 0004) | Accepted (branch `v0.5-inworld-62426-excalidraw`) |
 | [0009](ADR-0009-session-regrounding-from-canvas.md) | Re-ground the model from the canvas on session start | Accepted (branch `v0.5-inworld-62426-excalidraw`) |
+| [0010](ADR-0010-persist-conversation-transcript.md) | Persist + recap the conversation transcript (complements 0009) | Accepted (branch `v0.5-inworld-62426-excalidraw`) |
 
 ## Status values
 
