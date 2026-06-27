@@ -19,6 +19,16 @@ function truncate(s: string, n: number): string {
   return clean.length > n ? `${clean.slice(0, n - 1)}…` : clean
 }
 
+/** Shorten a screenshot's source URL to a readable host (e.g. "cnn.com"). */
+function hostOf(url: string | undefined): string {
+  if (!url) return ''
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return truncate(url, 40)
+  }
+}
+
 /**
  * Build the grounding message for the current scene, or `null` if the canvas is
  * empty / has nothing worth describing. The string is framed as automated
@@ -31,12 +41,19 @@ export function summarizeScene(api: ExcalidrawImperativeAPI | null): string | nu
   if (els.length === 0) return null
 
   const labels: string[] = []
+  const screenshots: string[] = []
+  const generated: string[] = []
   let shapes = 0
   let connectors = 0
-  let images = 0
+  let untaggedImages = 0
   let hasDoc = false
 
-  for (const e of els as Array<{ type: string; text?: string }>) {
+  type El = {
+    type: string
+    text?: string
+    customData?: { lumenImage?: { kind?: string; label?: string } } | null
+  }
+  for (const e of els as El[]) {
     switch (e.type) {
       case 'text':
         if (typeof e.text === 'string' && e.text.trim()) labels.push(e.text)
@@ -49,9 +66,13 @@ export function summarizeScene(api: ExcalidrawImperativeAPI | null): string | nu
       case 'arrow':
         connectors++
         break
-      case 'image':
-        images++
+      case 'image': {
+        const meta = e.customData?.lumenImage
+        if (meta?.kind === 'screenshot') screenshots.push(hostOf(meta.label))
+        else if (meta?.kind === 'generated') generated.push(truncate(meta.label ?? '', 50))
+        else untaggedImages++
         break
+      }
       case 'embeddable':
         hasDoc = true
         break
@@ -63,7 +84,23 @@ export function summarizeScene(api: ExcalidrawImperativeAPI | null): string | nu
   const parts: string[] = []
   if (shapes) parts.push(`${shapes} shape${shapes > 1 ? 's' : ''}/node${shapes > 1 ? 's' : ''}`)
   if (connectors) parts.push(`${connectors} connector${connectors > 1 ? 's' : ''} (arrows)`)
-  if (images) parts.push(`${images} generated image${images > 1 ? 's' : ''}`)
+  if (screenshots.length) {
+    const named = screenshots.filter(Boolean)
+    parts.push(
+      `${screenshots.length} website screenshot${screenshots.length > 1 ? 's' : ''}${
+        named.length ? ` (${named.join(', ')})` : ''
+      }`,
+    )
+  }
+  if (generated.length) {
+    const named = generated.filter(Boolean)
+    parts.push(
+      `${generated.length} generated image${generated.length > 1 ? 's' : ''}${
+        named.length ? ` (${named.map((l) => `"${l}"`).join(', ')})` : ''
+      }`,
+    )
+  }
+  if (untaggedImages) parts.push(`${untaggedImages} image${untaggedImages > 1 ? 's' : ''}`)
 
   if (hasDoc) {
     let title = ''

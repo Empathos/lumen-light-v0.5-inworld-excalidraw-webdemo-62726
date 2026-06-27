@@ -130,6 +130,7 @@ export function App() {
       const dims = await addImageToCanvas(api, data.dataURL, {
         x: typeof a.x === 'number' ? a.x : undefined,
         y: typeof a.y === 'number' ? a.y : undefined,
+        meta: { kind: 'generated', label: prompt },
       })
       return { ok: true, placed: true, ...dims }
     } catch (err) {
@@ -205,6 +206,7 @@ export function App() {
       const dims = await addImageToCanvas(api, data.dataURL, {
         x: typeof a.x === 'number' ? a.x : undefined,
         y: typeof a.y === 'number' ? a.y : undefined,
+        meta: { kind: 'screenshot', label: data.url ?? url },
       })
       return { ok: true, placed: true, url: data.url ?? url, ...dims }
     } catch (err) {

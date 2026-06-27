@@ -27,10 +27,19 @@ function naturalSize(dataURL: string): Promise<{ w: number; h: number }> {
 
 let imageCounter = 0
 
+/**
+ * Identifies what an image is, so a resumed session can describe it (BUG-001).
+ * `label` is the source URL for a screenshot, or the prompt for a generated image.
+ */
+export interface LumenImageMeta {
+  kind: 'screenshot' | 'generated'
+  label?: string
+}
+
 export async function addImageToCanvas(
   api: ExcalidrawImperativeAPI,
   dataURL: string,
-  opts?: { x?: number; y?: number },
+  opts?: { x?: number; y?: number; meta?: LumenImageMeta },
 ): Promise<{ width: number; height: number }> {
   const { w, h } = await naturalSize(dataURL)
   const scale = Math.min(1, MAX_DIM / Math.max(w, h))
@@ -63,7 +72,18 @@ export async function addImageToCanvas(
   }
 
   const created = convertToExcalidrawElements([
-    { type: 'image', x, y, fileId, width, height, status: 'saved' },
+    {
+      type: 'image',
+      x,
+      y,
+      fileId,
+      width,
+      height,
+      status: 'saved',
+      // Tag what this image is so summarizeScene can describe it on a resumed
+      // session (a screenshot's URL or a generated image's prompt).
+      ...(opts?.meta ? { customData: { lumenImage: opts.meta } } : {}),
+    },
   ])
   api.updateScene({ elements: [...existing, ...created] })
   api.scrollToContent(created, { fitToContent: true, animate: true, duration: 250 })
