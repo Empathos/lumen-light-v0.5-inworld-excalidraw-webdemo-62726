@@ -27,6 +27,8 @@ export interface RealtimeEnv {
   tavilyApiKey?: string
   /** Brave Search API key — fallback web_search provider. Server-side only. */
   braveApiKey?: string
+  /** thum.io API key for the screenshot_website tool. Server-side only. */
+  thumApiKey?: string
 }
 
 /** Read the backend config from process.env (used by Netlify Functions). */
@@ -42,6 +44,7 @@ export function readEnv(): RealtimeEnv {
     imageModel: e.GEMINI_IMAGE_MODEL,
     tavilyApiKey: e.TAVILY_API_KEY,
     braveApiKey: e.BRAVE_API_KEY,
+    thumApiKey: e.THUM_IO_KEY,
   }
 }
 
@@ -383,6 +386,27 @@ const WEB_SEARCH_TOOL = {
   },
 }
 
+const SCREENSHOT_WEBSITE_TOOL = {
+  type: 'function',
+  name: 'screenshot_website',
+  description:
+    'Capture a live screenshot of a public web page and place it on the canvas as an image. Use this when the user asks to "show/pull up/grab/screenshot" a website, article, or page, or wants to look at one together on the board. Pair it with web_search when you have a topic but not a URL: search first, then screenshot the best result. Takes a few seconds — say something brief first. The screenshot persists on the canvas and is NOT cleared by draw_canvas/draw_flow.',
+  parameters: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['url'],
+    properties: {
+      url: {
+        type: 'string',
+        description:
+          'The full URL of the page to capture, including the scheme (e.g. "https://example.com/article"). If the user gives a bare domain, prepend "https://".',
+      },
+      x: { type: 'number', description: 'Optional canvas x in pixels. Omit to auto-place beside existing content.' },
+      y: { type: 'number', description: 'Optional canvas y in pixels.' },
+    },
+  },
+}
+
 /** The session config attached to every Inworld call (model, voice, tools). */
 export function buildSession(env: RealtimeEnv) {
   return {
@@ -436,6 +460,7 @@ export function buildSession(env: RealtimeEnv) {
       READ_DOCUMENT_TOOL,
       BRIEF_FROM_CANVAS_TOOL,
       WEB_SEARCH_TOOL,
+      SCREENSHOT_WEBSITE_TOOL,
     ],
     tool_choice: 'auto',
   }
@@ -511,6 +536,57 @@ export async function generateImage(
     return { status: 502, body: { error: 'No image returned by Gemini.' } }
   }
   return { status: 200, body: { dataURL: `data:${inline.mimeType || 'image/png'};base64,${inline.data}` } }
+}
+
+/**
+ * screenshot_website backend: url -> thum.io renders the page server-side -> we
+ * fetch the image bytes and return a data URL (so the client reuses the exact
+ * same addImageToCanvas path as generate_image). The key never leaves the server.
+ */
+export async function screenshotWebsite(
+  env: RealtimeEnv,
+  rawUrl: string,
+): Promise<{ status: number; body: { dataURL?: string; url?: string; error?: string } }> {
+  if (!env.thumApiKey) {
+    return { status: 500, body: { error: 'THUM_IO_KEY is not set.' } }
+  }
+  // Normalize: accept bare domains, require http(s), reject anything else.
+  let target = rawUrl.trim()
+  if (!/^https?:\/\//i.test(target)) target = `https://${target}`
+  let parsed: URL
+  try {
+    parsed = new URL(target)
+  } catch {
+    return { status: 400, body: { error: `Invalid URL: ${rawUrl}` } }
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { status: 400, body: { error: 'Only http(s) URLs can be screenshotted.' } }
+  }
+  // thum.io path-style API: options are path segments, the target URL is
+  // appended literally (NOT percent-encoded). auth/<key> authenticates; width
+  // sizes the output; wait gives JS-heavy pages a moment to paint.
+  const endpoint = `https://image.thum.io/get/auth/${env.thumApiKey}/wait/3/width/1280/${target}`
+  let r: Response
+  try {
+    r = await fetch(endpoint)
+  } catch (err) {
+    return { status: 502, body: { error: err instanceof Error ? err.message : 'screenshot fetch failed' } }
+  }
+  if (!r.ok) {
+    return { status: r.status, body: { error: `thum.io error ${r.status}` } }
+  }
+  const contentType = r.headers.get('content-type') || 'image/png'
+  if (!contentType.startsWith('image/')) {
+    // thum.io returns text/plain with an error message on auth/quota problems.
+    const detail = (await r.text().catch(() => '')).slice(0, 200)
+    return { status: 502, body: { error: `thum.io did not return an image: ${detail || contentType}` } }
+  }
+  const buf = Buffer.from(await r.arrayBuffer())
+  if (buf.length === 0) {
+    return { status: 502, body: { error: 'thum.io returned an empty image.' } }
+  }
+  const dataURL = `data:${contentType};base64,${buf.toString('base64')}`
+  return { status: 200, body: { dataURL, url: parsed.toString() } }
 }
 
 interface SearchResult {
