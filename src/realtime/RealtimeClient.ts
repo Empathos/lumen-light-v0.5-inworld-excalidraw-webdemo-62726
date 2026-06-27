@@ -9,11 +9,11 @@ export interface RealtimeCallbacks {
   onMic?: (enabled: boolean) => void
   /**
    * Called when the session connects, to re-ground the model in the existing
-   * canvas (BUG-001). Return a textual description of what is already on the
-   * board, or null/empty if there is nothing to ground. Injected as silent
-   * context — the model is not asked to respond to it.
+   * session — what is already on the canvas and what was said earlier (BUG-001).
+   * Return the grounding text, or null/empty if there is nothing to ground.
+   * Injected as silent context — the model is not asked to respond to it.
    */
-  getCanvasGrounding?: () => string | null | undefined
+  getSessionGrounding?: () => string | null | undefined
 }
 
 interface RealtimeServerEvent {
@@ -141,11 +141,12 @@ export class RealtimeClient {
           const { type: _drop, ...session } = this.sessionConfig
           this.send({ type: 'session.update', session })
         }
-        // Re-ground the model in the existing canvas so a resumed session knows
-        // what is already on the board (BUG-001). Silent context: we create the
-        // conversation item but do NOT send response.create, so it just informs
-        // the model's next reply rather than triggering an immediate one.
-        const grounding = this.callbacks.getCanvasGrounding?.()
+        // Re-ground the model in the existing session so a resumed connection
+        // knows what is already on the board and what was said earlier (BUG-001).
+        // Silent context: we create the conversation item but do NOT send
+        // response.create, so it informs the model's next reply rather than
+        // triggering an immediate one.
+        const grounding = this.callbacks.getSessionGrounding?.()
         if (grounding && grounding.trim()) {
           this.send({
             type: 'conversation.item.create',

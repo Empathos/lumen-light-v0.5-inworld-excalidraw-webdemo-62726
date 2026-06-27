@@ -8,6 +8,7 @@ import { normalizeFlowDiagram } from './canvas/normalizeFlow'
 import { drawCanvasElements, normalizeCanvasElements } from './canvas/drawCanvas'
 import { addImageToCanvas } from './canvas/addImage'
 import { summarizeScene } from './canvas/summarizeScene'
+import { loadTranscript, saveTranscript, summarizeTranscript } from './assistant/transcriptStore'
 import {
   openDocument,
   highlightPassage,
@@ -31,7 +32,9 @@ export function App() {
   const mockRef = useRef(new MockAssistantProvider())
   const clientRef = useRef<RealtimeClient | null>(null)
 
-  const [messages, setMessages] = useState<ConversationEntry[]>([])
+  // Restore the prior transcript so a returning user sees the conversation, and
+  // the model can be re-grounded in what was said (BUG-001, gap #2).
+  const [messages, setMessages] = useState<ConversationEntry[]>(() => loadTranscript())
   const [status, setStatus] = useState<RealtimeStatus>('idle')
   const [micOn, setMicOn] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -79,6 +82,11 @@ export function App() {
   const addMessage = useCallback((entry: ConversationEntry) => {
     setMessages((prev) => [...prev, entry])
   }, [])
+
+  // Persist the transcript so it survives refresh / a new session.
+  useEffect(() => {
+    saveTranscript(messages)
+  }, [messages])
 
   const handleReady = useCallback((api: ExcalidrawImperativeAPI) => {
     apiRef.current = api
@@ -278,7 +286,14 @@ export function App() {
     const client = new RealtimeClient({
       onStatus: (s) => setStatus(s),
       onMic: (enabled) => setMicOn(enabled),
-      getCanvasGrounding: () => summarizeScene(apiRef.current),
+      getSessionGrounding: () => {
+        // Re-ground a resumed session in both the board and the dialogue. Both
+        // are read fresh at connect time (canvas from the live scene, transcript
+        // from storage), so neither can drift from the current state.
+        const canvas = summarizeScene(apiRef.current)
+        const conversation = summarizeTranscript(loadTranscript())
+        return [canvas, conversation].filter(Boolean).join('\n\n') || null
+      },
       onUserTranscript: (text) => addMessage({ role: 'user', text }),
       onAssistantTranscript: (text) => addMessage({ role: 'assistant', text }),
       onError: (message) => addMessage({ role: 'assistant', text: `[error] ${message}` }),
