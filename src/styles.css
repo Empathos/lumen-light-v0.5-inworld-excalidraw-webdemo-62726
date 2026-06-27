@@ -31,6 +31,7 @@ body {
   display: flex;
   height: 100%;
   width: 100%;
+  position: relative;
 }
 
 .canvas-wrap {
@@ -45,6 +46,39 @@ body {
   inset: 0;
 }
 
+.app__resizer {
+  flex: 0 0 6px;
+  align-self: stretch;
+  cursor: col-resize;
+  position: relative;
+  z-index: 5;
+  touch-action: none;
+  background: transparent;
+}
+
+.app__resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: var(--panel-border);
+  transition: background 0.12s ease, width 0.12s ease;
+}
+
+.app__resizer:hover::after,
+.app__resizer.dragging::after {
+  background: var(--accent);
+  width: 3px;
+}
+
+body.resizing-x {
+  cursor: col-resize;
+  user-select: none;
+}
+
 .conversation-panel {
   flex: 0 0 var(--panel-w);
   width: var(--panel-w);
@@ -53,6 +87,88 @@ body {
   flex-direction: column;
   background: var(--panel-bg);
   border-left: 1px solid var(--panel-border);
+  transition: width 0.2s ease, flex-basis 0.2s ease;
+}
+
+/* Collapsed: slide the chat panel off-screen and let the canvas fill the space. */
+.app--panel-hidden .conversation-panel {
+  flex-basis: 0;
+  width: 0;
+  min-width: 0;
+  border-left: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.app--panel-hidden .app__resizer {
+  display: none;
+}
+
+.panel-hide {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.panel-hide:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* Peek tab shown only when the panel is hidden. */
+.panel-reveal {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 26px;
+  padding: 14px 0;
+  background: var(--panel-bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  box-shadow: -3px 0 14px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.panel-reveal:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.panel-reveal__chevron {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.panel-reveal__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.app--panel-hidden .panel-reveal {
+  display: flex;
 }
 
 .conversation-header {

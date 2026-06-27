@@ -9,6 +9,7 @@ interface ConversationPanelProps {
   micOn: boolean
   onToggleSession: () => void
   onSend: (text: string) => void
+  onHide: () => void
 }
 
 const STATUS_LABEL: Record<RealtimeStatus, string> = {
@@ -26,6 +27,7 @@ export function ConversationPanel({
   micOn,
   onToggleSession,
   onSend,
+  onHide,
 }: ConversationPanelProps) {
   const [draft, setDraft] = useState('')
   const connected = status === 'connected'
@@ -62,6 +64,15 @@ export function ConversationPanel({
           <span className="status-dot" />
           {STATUS_LABEL[status]}
         </span>
+        <button
+          type="button"
+          className="panel-hide"
+          onClick={onHide}
+          aria-label="Hide chat panel"
+          title="Hide panel"
+        >
+          »
+        </button>
       </header>
 
       <div className="session-bar">

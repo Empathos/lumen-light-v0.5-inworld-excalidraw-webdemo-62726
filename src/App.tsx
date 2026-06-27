@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
 import { exportToBlob } from '@excalidraw/excalidraw'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { LumenCanvas } from './canvas/LumenCanvas'
@@ -18,6 +19,12 @@ import { MockAssistantProvider } from './assistant/mockProvider'
 import { RealtimeClient, type RealtimeStatus } from './realtime/RealtimeClient'
 import type { ConversationEntry } from './assistant/types'
 
+const PANEL_MIN = 280
+const PANEL_MAX = 900
+const PANEL_DEFAULT = 360
+const PANEL_KEY = 'lumen-panel-w'
+const PANEL_HIDDEN_KEY = 'lumen-panel-hidden'
+
 export function App() {
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null)
   const mockRef = useRef(new MockAssistantProvider())
@@ -27,6 +34,46 @@ export function App() {
   const [status, setStatus] = useState<RealtimeStatus>('idle')
   const [micOn, setMicOn] = useState(false)
   const [busy, setBusy] = useState(false)
+
+  const [panelWidth, setPanelWidth] = useState(() => {
+    const saved = Number(localStorage.getItem(PANEL_KEY))
+    return Number.isFinite(saved) && saved >= PANEL_MIN ? Math.min(saved, PANEL_MAX) : PANEL_DEFAULT
+  })
+  const [panelHidden, setPanelHidden] = useState(
+    () => localStorage.getItem(PANEL_HIDDEN_KEY) === '1',
+  )
+  const resizingRef = useRef(false)
+
+  useEffect(() => {
+    localStorage.setItem(PANEL_KEY, String(panelWidth))
+  }, [panelWidth])
+
+  useEffect(() => {
+    localStorage.setItem(PANEL_HIDDEN_KEY, panelHidden ? '1' : '0')
+  }, [panelHidden])
+
+  const onResizeStart = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    resizingRef.current = true
+    e.currentTarget.setPointerCapture(e.pointerId)
+    e.currentTarget.classList.add('dragging')
+    document.body.classList.add('resizing-x')
+  }, [])
+
+  const onResizeMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!resizingRef.current) return
+    const next = window.innerWidth - e.clientX
+    const max = Math.min(PANEL_MAX, window.innerWidth - 320)
+    setPanelWidth(Math.round(Math.min(Math.max(next, PANEL_MIN), max)))
+  }, [])
+
+  const onResizeEnd = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!resizingRef.current) return
+    resizingRef.current = false
+    e.currentTarget.releasePointerCapture?.(e.pointerId)
+    e.currentTarget.classList.remove('dragging')
+    document.body.classList.remove('resizing-x')
+  }, [])
 
   const addMessage = useCallback((entry: ConversationEntry) => {
     setMessages((prev) => [...prev, entry])
@@ -277,10 +324,24 @@ export function App() {
   )
 
   return (
-    <div className="app">
+    <div
+      className={`app${panelHidden ? ' app--panel-hidden' : ''}`}
+      style={{ ['--panel-w']: `${panelWidth}px` } as CSSProperties}
+    >
       <main className="canvas-wrap">
         <LumenCanvas onReady={handleReady} />
       </main>
+      <div
+        className="app__resizer"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize chat panel (double-click to reset)"
+        onPointerDown={onResizeStart}
+        onPointerMove={onResizeMove}
+        onPointerUp={onResizeEnd}
+        onPointerCancel={onResizeEnd}
+        onDoubleClick={() => setPanelWidth(PANEL_DEFAULT)}
+      />
       <ConversationPanel
         messages={messages}
         busy={busy}
@@ -288,7 +349,18 @@ export function App() {
         micOn={micOn}
         onToggleSession={toggleSession}
         onSend={handleSend}
+        onHide={() => setPanelHidden(true)}
       />
+      <button
+        type="button"
+        className="panel-reveal"
+        onClick={() => setPanelHidden(false)}
+        aria-label="Show chat panel"
+        title="Show chat"
+      >
+        <span className="panel-reveal__chevron">‹</span>
+        <span className="panel-reveal__label">Chat</span>
+      </button>
     </div>
   )
 }
