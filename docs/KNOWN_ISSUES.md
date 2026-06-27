@@ -74,6 +74,14 @@ item the moment the data channel opens, combining:
   `src/assistant/transcriptStore.ts` persists the transcript to `localStorage`
   (`lumen-transcript-v1`), restores it on load, and recaps the last ~12 turns.
 
+**Timing follow-up (2026-06-28):** the first cut injected the grounding
+synchronously in the data-channel `open` handler, *before* `session.updated`. That
+caused two live regressions — the model still saw a blank canvas (the item landed
+in the default persona's context and was discarded on reconfigure), and a summary
+error could block `setStatus('connected')` and freeze the UI. Fixed by marking the
+session connected first, guarding the summary in try/catch, and **deferring the
+injection until `session.updated`** (with a 1.5s fallback and a one-shot guard).
+
 ### Remaining (deferred — separate from this bug)
 - **Cross-device / server-side** session storage and identity — land with
   authentication + the platform. The current persistence is device-local
