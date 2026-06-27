@@ -177,6 +177,32 @@ export function App() {
     }
   }, [])
 
+  const screenshotWebsiteFromArgs = useCallback(async (args: unknown) => {
+    const api = apiRef.current
+    if (!api) return { ok: false, error: 'canvas not ready' }
+    const a = (args ?? {}) as Record<string, unknown>
+    const url = typeof a.url === 'string' ? a.url.trim() : ''
+    if (!url) return { ok: false, error: 'missing url' }
+    try {
+      const resp = await fetch('/api/screenshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      })
+      const data = (await resp.json()) as { dataURL?: string; url?: string; error?: string }
+      if (!resp.ok || !data.dataURL) {
+        return { ok: false, error: data.error || 'screenshot failed' }
+      }
+      const dims = await addImageToCanvas(api, data.dataURL, {
+        x: typeof a.x === 'number' ? a.x : undefined,
+        y: typeof a.y === 'number' ? a.y : undefined,
+      })
+      return { ok: true, placed: true, url: data.url ?? url, ...dims }
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  }, [])
+
   const briefFromCanvasFromArgs = useCallback((args: unknown) => {
     const api = apiRef.current
     if (!api) return { ok: false, error: 'canvas not ready' }
@@ -264,6 +290,7 @@ export function App() {
         if (name === 'read_document') return readDocument()
         if (name === 'brief_from_canvas') return briefFromCanvasFromArgs(args)
         if (name === 'web_search') return webSearchFromArgs(args)
+        if (name === 'screenshot_website') return screenshotWebsiteFromArgs(args)
         return { ok: false, error: `unknown tool: ${name}` }
       },
     })
