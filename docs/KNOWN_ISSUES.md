@@ -5,7 +5,7 @@ index) as a record. Fixes should reference the bug id in the commit message.
 
 | ID | Title | Severity | Status |
 |----|-------|----------|--------|
-| [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | Open |
+| [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | Resolved (canvas re-grounding) |
 
 ---
 
@@ -14,7 +14,8 @@ index) as a record. Fixes should reference the bug id in the commit message.
 **Assistant loses awareness of the canvas (and prior conversation) across sessions**
 
 - **Severity:** High (breaks continuity — the core "come back to your thinking" promise)
-- **Status:** Open
+- **Status:** Resolved — 2026-06-28 (canvas re-grounding, gap #1). Conversation
+  persistence (gap #2) is deferred; see Remaining below.
 - **Reported:** 2026-06-28
 
 ### Steps to reproduce
@@ -62,6 +63,17 @@ note that auth + a platform come later):
 - Keep it **device-local and keyless** for now; full cross-device persistence and
   identity land with authentication + the platform.
 
-### Out of scope
-- Authentication / user accounts.
-- Cross-device or server-side session storage.
+### Resolution
+Gap #1 (re-grounding) is fixed by re-deriving context from the canvas on every
+session connect, per [ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md):
+`src/canvas/summarizeScene.ts` builds a compact textual description of the live
+scene (shape/connector/image counts, labels, open-document title) and
+`RealtimeClient` injects it as silent context the moment the data channel opens.
+Derived, not stored — so it can't drift from what the user sees.
+
+### Remaining (deferred)
+- **Conversation memory (gap #2):** the *dialogue* is still not persisted — only
+  the canvas artifact grounds the model. Persisting/summarizing the transcript is
+  a future complement.
+- **Out of scope here:** authentication / user accounts; cross-device or
+  server-side session storage (land with the platform).
