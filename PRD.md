@@ -1,7 +1,10 @@
-# Lumen-Light / Beacon Table - Product Requirements (v0 Draft)
+# Lumen Light — Product Requirements
 
-Status: working draft. UX-first, high-level. This PRD describes the current
-canvas-first Lumen-Light / Beacon Table product direction.
+Status: living draft. UX-first, high-level. This PRD describes the current
+canvas-first Lumen Light product direction.
+
+> **"Beacon Table"** was this project's original codename — kept here in quotes
+> as a memento of where it started. The product name is **Lumen Light**.
 
 > **Where things live:** this PRD is the *product* view (what/why/for whom).
 > The *engineering* views live beside it — runtime contract in
@@ -18,8 +21,8 @@ Lumen Light is a **thinking canvas with a live AI collaborator**.
 
 You open a large open whiteboard. You talk or type. As you do, an AI assistant
 listens and **draws alongside you in real time** — turning loose conversation
-into flow diagrams, structure, and supporting visuals so the ideas become
-coherent while you're still working through them.
+into flow diagrams, structure, generated visuals, and even live web pages, so the
+ideas become coherent while you're still working through them.
 
 It is not a chat window with a canvas bolted on. The **canvas is the main stage**,
 and the assistant is a creative partner drawing on it with you.
@@ -27,8 +30,9 @@ and the assistant is a creative partner drawing on it with you.
 One sentence:
 
 > **Lumen Light is a voice-and-text whiteboard where an AI collaborator diagrams
-> your conversation as it happens, and can brief you through documents by talking,
-> highlighting, and drawing the connections live.**
+> your conversation as it happens, pulls in live information and web pages, and
+> can brief you through documents by talking, highlighting, and drawing the
+> connections live.**
 
 ---
 
@@ -42,6 +46,7 @@ They reach for Lumen Light when they want to:
 - think out loud and watch the structure of their thoughts appear
 - make a messy conversation coherent without stopping to draw it themselves
 - be briefed on a dense document instead of reading it alone
+- bring live facts and real web pages into the same visual space
 - leave with a visual artifact that captures the thinking, not just a transcript
 
 ---
@@ -51,14 +56,16 @@ They reach for Lumen Light when they want to:
 ### 3.1 Live conversation-to-diagram (hero feature)
 
 As the user speaks or types, the assistant extracts the key points and **draws
-them on the canvas in real time** — primarily as **flow diagrams** that bring
-structure and coherence to what's being said.
+them on the canvas in real time** — flow diagrams, mind maps, sticky-note
+clusters, labelled shapes, and connectors that bring structure and coherence to
+what's being said.
 
 - Diagrams appear and update as the conversation moves.
 - The canvas content is **supplemental** — it supports and clarifies what the
   user is saying, rather than transcribing it.
-- Shapes follow a **defined visual schema** (starting with UML-style flow shapes)
-  so output is consistent and legible, not random scribbles.
+- Output follows a **defined, validated visual vocabulary** (shapes, notes, text,
+  connectors with color/fill/size) so it stays consistent and legible, not random
+  scribbles.
 
 ### 3.2 Voice and text input (both first-class)
 
@@ -68,24 +75,35 @@ structure and coherence to what's being said.
 
 ### 3.3 Document briefing mode
 
-When the user provides a document and asks to be briefed, the assistant acts like
-a **Toastmaster / live presenter**:
+When the user provides or pastes a document and asks to be briefed, the assistant
+acts like a **Toastmaster / live presenter**:
 
-- walks through the document section by section, talking it through
+- opens the document in a window on the canvas and walks through it section by
+  section, talking it through
 - **highlights the interesting passages** as it discusses them
 - **draws the correlations** between ideas visually on the canvas
 - guides the user's attention rather than dumping a summary
 
 ### 3.4 Creative visuals and generated media
 
-The assistant is allowed to be **creative** in how it represents ideas:
-diagrams, infographics, arrangements, emphasis — and, as a layered-in capability,
-**generated pictures/media** to enrich the canvas.
+The assistant can be **creative** in how it represents ideas — diagrams,
+arrangements, emphasis — and can **generate pictures/media** and place them on the
+canvas to enrich the thinking.
 
-### 3.5 A canvas you leave with
+### 3.5 Live web research and web pages on the canvas
+
+The assistant isn't limited to what it already knows:
+
+- it can **search the live web** mid-conversation and bring back a synthesized
+  answer with sources, then diagram or brief the findings
+- it can **capture a real web page** and drop it onto the canvas as an image, so a
+  source can be looked at together — find it and show it in one move
+
+### 3.6 A canvas you leave with
 
 The session produces a **visual artifact** — the populated canvas — that captures
-the shape of the thinking, not just a chat log.
+the shape of the thinking, not just a chat log. The scene persists across a
+refresh, and the app can be installed to a phone home screen.
 
 ---
 
@@ -97,15 +115,16 @@ The experience, end to end:
 open canvas
   -> user speaks or types
   -> assistant understands the point
-  -> assistant draws / updates flow diagram on the canvas (live)
+  -> assistant draws / updates the canvas (live) — diagrams, images, web pages
   -> conversation continues, canvas keeps pace
 ```
 
 Document briefing:
 
 ```text
-user loads a document + asks for a briefing
-  -> assistant walks through it section by section (talking)
+user loads or pastes a document + asks for a briefing
+  -> assistant opens it in a window on the canvas
+  -> walks through it section by section (talking)
   -> highlights the passage it's discussing
   -> draws the connections between passages on the canvas
   -> user follows along, asks questions, redirects
@@ -121,13 +140,13 @@ directly, and steer what the assistant focuses on.
 Even on a creative canvas, the user must be able to tell **what's grounded from
 what's invented**. We keep a clear distinction between:
 
-1. **Source** — what a provided document literally says.
+1. **Source** — what a provided document (or cited web result) literally says.
 2. **Assistant interpretation** — what the AI is inferring, structuring, or drawing.
 3. **What the user has kept** — what the user accepts/edits as theirs.
 
-When the assistant briefs from a document, anything it draws should be traceable
-back to the passage it came from. Creativity is encouraged; ungrounded claims
-dressed up as fact are not.
+When the assistant briefs from a document or reports a web search, anything it
+draws should be traceable back to the passage or source it came from. Creativity
+is encouraged; ungrounded claims dressed up as fact are not.
 
 > Note: in the original product this was a strict "stage everything before it's
 > durable" review gate. On a live creative canvas this needs a lighter touch —
@@ -137,44 +156,52 @@ dressed up as fact are not.
 
 ## 6. Key Technology Direction (high-level only)
 
-Detailed architecture is deferred, but the intended direction is:
+Detailed architecture lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); the
+direction in brief:
 
-- **Canvas:** TLDraw (programmable shapes, supports an assistant drawing into it).
-- **Live voice:** OpenAI Realtime API.
-- **Assistant → canvas:** a defined shape schema (UML-style to start) the
+- **Canvas:** Excalidraw (programmable elements, easy image embedding, hand-drawn
+  feel; dark theme by default).
+- **Live voice + text:** Inworld Realtime API over WebRTC, with a router as the
+  model "brain." Inworld speaks the OpenAI Realtime protocol, so the loop is
+  provider-portable. (The earlier OpenAI Realtime approach is recorded in the ADRs.)
+- **Assistant → canvas:** a defined, validated element/shape vocabulary the
   assistant emits to create/update diagrams.
+- **Supporting providers:** Google Gemini ("Nano Banana") for generated images,
+  Tavily/Brave for web search, thum.io for website screenshots — all proxied
+  server-side so keys never reach the browser.
 - **Build order advantage:** because voice and text trigger the *same* canvas
-  actions, the whole loop can be built and tested over **text first**, then voice
+  actions, the whole loop was built and tested over **text first**, then voice
   layered on without redesign.
 
 ---
 
-## 7. What's In vs. Out for v0
+## 7. What's In vs. Later
 
-**In:**
+**In (working today):**
 
-- open canvas as the main surface
-- text-driven live conversation-to-flow-diagram
-- voice-driven live conversation-to-flow-diagram (OpenAI Realtime)
+- open canvas as the main surface (persisted across refresh; installable PWA)
+- text- and voice-driven live conversation-to-diagram (Inworld Realtime)
+- the full validated drawing vocabulary (shapes, notes, text, connectors)
 - document briefing mode with passage highlighting + connection drawing
-- a defined starter shape schema
+- generated images on the canvas
+- live web search, and website screenshots placed on the canvas
 
-**Later (not v0):**
+**Later (not yet):**
 
-- generated pictures / rich media on the canvas
 - multi-user / live collaboration
 - deep memory / export-to-external-systems integration
-- advanced creative visual styles beyond the starter schema
+- file/PDF upload + OCR as briefing sources (paste/Markdown works today)
+- richer diagram types and creative visual styles beyond the current vocabulary
 
 ---
 
 ## 8. Open Questions
 
 - How light or strict should the trust/review model be on a live canvas?
-- What exactly is the starter shape schema (which UML-style shapes for v0)?
 - How does the user correct or reshape what the assistant drew?
-- What's the smallest first runnable slice (the "hero demo")?
-- Does the session persist / what does the user leave with concretely?
+- What's the strongest "hero demo" slice to lead with?
+- The scene persists locally (localStorage) — what should cross-device
+  persistence / "what the user leaves with" look like concretely?
 
 ---
 
