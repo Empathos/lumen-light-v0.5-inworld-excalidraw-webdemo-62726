@@ -57,6 +57,11 @@ export class RealtimeClient {
   // ducked, so they stay audible while the user holds the floor.
   private audioCtx?: AudioContext
   private backchannelNextTime = 0
+  // Session re-grounding (BUG-001) is computed at connect but sent only once the
+  // session is confirmed live (session.updated), so it lands in the Lumen session
+  // rather than the default persona. Guarded so it can never block connect.
+  private pendingGrounding?: string
+  private groundingSent = false
 
   constructor(private readonly callbacks: RealtimeCallbacks = {}) {}
 
@@ -72,6 +77,8 @@ export class RealtimeClient {
   async connect(): Promise<void> {
     if (this.status === 'connecting' || this.status === 'connected') return
     this.setStatus('connecting')
+    this.pendingGrounding = undefined
+    this.groundingSent = false
 
     // connect() is triggered by a user click, so creating the AudioContext here
     // satisfies browser autoplay policy for backchannel playback.
@@ -141,23 +148,19 @@ export class RealtimeClient {
           const { type: _drop, ...session } = this.sessionConfig
           this.send({ type: 'session.update', session })
         }
-        // Re-ground the model in the existing session so a resumed connection
-        // knows what is already on the board and what was said earlier (BUG-001).
-        // Silent context: we create the conversation item but do NOT send
-        // response.create, so it informs the model's next reply rather than
-        // triggering an immediate one.
-        const grounding = this.callbacks.getSessionGrounding?.()
-        if (grounding && grounding.trim()) {
-          this.send({
-            type: 'conversation.item.create',
-            item: {
-              type: 'message',
-              role: 'user',
-              content: [{ type: 'input_text', text: grounding }],
-            },
-          })
+        // Compute the re-grounding now (canvas + conversation state is current),
+        // but DON'T send it yet — wait for session.updated so it lands in the
+        // configured Lumen session, not the default persona (BUG-001). Guarded so
+        // a summary error can never block the connect path / freeze the UI.
+        try {
+          this.pendingGrounding = this.callbacks.getSessionGrounding?.() ?? undefined
+        } catch {
+          this.pendingGrounding = undefined
         }
+        // Mark connected BEFORE any grounding work so the session is always usable.
         this.setStatus('connected')
+        // Fallback in case session.updated never arrives: inject anyway shortly.
+        setTimeout(() => this.flushGrounding(), 1500)
       })
       dc.addEventListener('message', (e) => this.handleEvent(e.data))
 
@@ -216,11 +219,45 @@ export class RealtimeClient {
     }
   }
 
+  /**
+   * Inject the deferred session re-grounding (BUG-001) exactly once, as silent
+   * context (no response.create, so it informs the next reply rather than
+   * triggering one). Fired on session.updated, with a timeout fallback. Capped +
+   * guarded so it can never disrupt or freeze the session.
+   */
+  private flushGrounding() {
+    if (this.groundingSent) return
+    this.groundingSent = true
+    let text = this.pendingGrounding
+    this.pendingGrounding = undefined
+    if (!text || !text.trim()) return
+    if (text.length > 8000) text = `${text.slice(0, 8000)}…`
+    try {
+      this.send({
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text }],
+        },
+      })
+    } catch {
+      /* non-fatal: the session still works without the grounding */
+    }
+  }
+
   private async handleEvent(raw: string) {
     let event: RealtimeServerEvent
     try {
       event = JSON.parse(raw) as RealtimeServerEvent
     } catch {
+      return
+    }
+
+    if (event.type === 'session.updated') {
+      // The Lumen session config is now live — safe to inject the re-grounding
+      // context so it lands in the right session rather than the default persona.
+      this.flushGrounding()
       return
     }
 
