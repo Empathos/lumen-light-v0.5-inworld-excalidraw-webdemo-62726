@@ -163,9 +163,11 @@ conversation item, framed as automated context (no `response.create`, and the
 model must not thank the user for it), so a resumed session knows both the board
 and the dialogue it is continuing:
 
-- **Canvas summary** — `src/canvas/summarizeScene.ts` describes the live scene
-  (shape/connector/image counts, labels, open-document title). *Derived* from the
-  scene each time, so it cannot drift from what the user sees.
+- **Canvas summary** — `src/canvas/summarizeScene.ts` describes the live scene:
+  shapes/connectors, text labels, the open-document title, and images identified
+  by what they are (website screenshots by host, generated images by prompt — via
+  `customData.lumenImage` set in `addImage.ts`). *Derived* from the scene each
+  time, so it cannot drift from what the user sees.
   ([ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md))
 - **Conversation recap** — `src/assistant/transcriptStore.ts` replays the last
   ~12 turns of the persisted transcript (`lumen-transcript-v1`).

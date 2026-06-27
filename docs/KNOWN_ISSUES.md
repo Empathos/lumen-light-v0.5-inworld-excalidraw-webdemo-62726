@@ -74,6 +74,14 @@ item the moment the data channel opens, combining:
   `src/assistant/transcriptStore.ts` persists the transcript to `localStorage`
   (`lumen-transcript-v1`), restores it on load, and recaps the last ~12 turns.
 
+**Image-identity follow-up (2026-06-28):** the grounding initially summarized
+images only as a count, so a resumed model knew images existed but couldn't say
+*what* they were (e.g. it missed two website screenshots on the board). Fixed by
+tagging each placed image with `customData.lumenImage` (`addImage.ts`) — a
+screenshot's URL or a generated image's prompt — which `summarizeScene` now
+surfaces ("2 website screenshots (google.com, cnn.com)"). Images placed before
+this change have no tag and still show as a generic count.
+
 **Timing follow-up (2026-06-28):** the first cut injected the grounding
 synchronously in the data-channel `open` handler, *before* `session.updated`. That
 caused two live regressions — the model still saw a blank canvas (the item landed
