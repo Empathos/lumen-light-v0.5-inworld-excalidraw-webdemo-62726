@@ -23,11 +23,17 @@ it and exercising the flow:
 1. `npm run dev`, open http://localhost:5180.
 2. **Local dev mock:** type `Idea -> Sketch -> Build -> Ship` before starting a
    session and confirm a flow diagram renders. This is development scaffolding
-   for exercising `mockProvider -> drawFlow -> TLDraw`, not a product
+   for exercising `mockProvider -> drawFlow -> Excalidraw`, not a product
    requirement.
 3. **Live path (needs a key):** start a session, speak or type an open-ended
    prompt, and confirm the agent calls `draw_canvas` with varied shapes/notes,
    and occasionally `capture_canvas` to realign.
+4. **Provider tools (each needs its key):** confirm `generate_image` (Gemini) and
+   `screenshot_website` (thum.io) drop an image on the canvas, `web_search`
+   (Tavily/Brave) returns an answer + sources, and the document tools
+   (`open_document` / `read_document` / `highlight_passage` / `brief_from_canvas`)
+   open and walk the on-canvas briefing window. Without a key, each returns a
+   clean error rather than crashing.
 
 Dev-only console hooks make canvas paths testable without the model:
 
@@ -62,10 +68,13 @@ up yet; Vitest is the natural fit for a Vite project. Prioritize:
 
 ## What we deliberately don't test (yet)
 
-- The OpenAI Realtime WebRTC handshake (external, networked, key-gated) — verify
-  manually against current OpenAI docs, which change often
-  ([ADR-0002](decisions/ADR-0002-openai-realtime-webrtc.md)).
-- TLDraw's own rendering internals.
+- The Inworld Realtime WebRTC handshake (external, networked, key-gated) — verify
+  manually. Inworld speaks the OpenAI Realtime protocol but the signaling is
+  proxied server-side ([ADR-0007](decisions/ADR-0007-inworld-realtime-provider.md);
+  the earlier OpenAI approach is [ADR-0002](decisions/ADR-0002-openai-realtime-webrtc.md)).
+- The provider HTTP APIs themselves (Gemini, Tavily/Brave, thum.io) — external and
+  key-gated; verify manually.
+- Excalidraw's own rendering internals.
 
 ## Definition of done for a change
 
