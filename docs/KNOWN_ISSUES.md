@@ -82,14 +82,15 @@ screenshot's URL or a generated image's prompt — which `summarizeScene` now
 surfaces ("2 website screenshots (google.com, cnn.com)"). Images placed before
 this change have no tag and still show as a generic count.
 
-**Visual-grounding follow-up (2026-06-28):** text still couldn't convey image
-*content* — the model saw "two images" and assumed they were generated when they
-were website snapshots. Fixed by also injecting a full-canvas screenshot as an
-`input_image` on resume when the board has images (text-only otherwise), so the
-model can actually see them. See
-[ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md). This also covers the
-legacy untagged images above, since the model now sees them rather than relying on
-the metadata.
+**Visual-grounding attempt + revert (2026-06-28):** text can't convey image
+*content* (the model saw "two images" and assumed generated, not website
+snapshots). We tried auto-injecting a full-canvas screenshot as an `input_image`
+on resume — but it **regressed the voice session to silence** (a full-canvas PNG
+is too large to push over the WebRTC data channel at session start). **Reverted**
+([ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md)). The grounding text
+now instructs the model to call `capture_canvas` on demand when asked about an
+image — the proven mid-session vision path — instead of pushing a screenshot up
+front. Newly placed screenshots are still named by host in the text summary.
 
 **Timing follow-up (2026-06-28):** the first cut injected the grounding
 synchronously in the data-channel `open` handler, *before* `session.updated`. That

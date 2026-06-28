@@ -1,7 +1,12 @@
 # ADR-0011: Include a canvas screenshot in re-grounding when the board has images
 
 ## Status
-Accepted (branch `v0.5-inworld-62426-excalidraw`)
+**Reverted 2026-06-28.** Live-tested and regressed: injecting a full-canvas PNG at
+session start made the voice model stop responding entirely — a data-channel
+message that large (or the cost of processing it up front) breaks/stalls the
+session. Reverted to text-only grounding; the model is instead instructed to call
+`capture_canvas` on demand to see images (the proven mid-session vision path).
+Decision kept as a record of what was tried and why it was rolled back.
 
 ## Date
 2026-06-28
