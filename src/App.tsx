@@ -248,21 +248,6 @@ export function App() {
     }
   }, [])
 
-  // Visual grounding for a resumed session (BUG-001): a full-canvas screenshot,
-  // but only when the board has images — text already conveys pure diagrams, and
-  // a vision capture costs a round-trip, so we spend it only when it adds what
-  // text can't (e.g. recognizing a website snapshot vs a generated image).
-  const getCanvasGroundingImage = useCallback(async (): Promise<string | null> => {
-    const api = apiRef.current
-    if (!api) return null
-    const hasImage = api.getSceneElements().some((e) => !e.isDeleted && e.type === 'image')
-    if (!hasImage) return null
-    const result = await captureCanvas()
-    return result && typeof result === 'object' && 'image' in result && typeof result.image === 'string'
-      ? result.image
-      : null
-  }, [captureCanvas])
-
   // Dev-only hook so the rich canvas tool can be exercised without a live
   // (paid, mic-gated) realtime session. Mirrors what the model's draw_canvas
   // tool call does. Available as window.__lumenDrawCanvas(elements) in dev.
@@ -311,7 +296,6 @@ export function App() {
         const conversation = summarizeTranscript(loadTranscript())
         return [canvas, conversation].filter(Boolean).join('\n\n') || null
       },
-      getCanvasImage: getCanvasGroundingImage,
       onUserTranscript: (text) => addMessage({ role: 'user', text }),
       onAssistantTranscript: (text) => addMessage({ role: 'assistant', text }),
       onError: (message) => addMessage({ role: 'assistant', text: `[error] ${message}` }),

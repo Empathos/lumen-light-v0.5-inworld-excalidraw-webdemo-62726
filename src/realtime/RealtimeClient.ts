@@ -14,13 +14,6 @@ export interface RealtimeCallbacks {
    * Injected as silent context — the model is not asked to respond to it.
    */
   getSessionGrounding?: () => string | null | undefined
-  /**
-   * Optional companion to getSessionGrounding: a screenshot (PNG data URL) of the
-   * whole canvas, so the model can *see* what is on it — e.g. that an image is a
-   * website snapshot, which text can only count, not read. Return null to skip
-   * (e.g. an empty or image-free board). Injected as a silent input_image.
-   */
-  getCanvasImage?: () => Promise<string | null | undefined>
 }
 
 interface RealtimeServerEvent {
@@ -232,52 +225,28 @@ export class RealtimeClient {
    * triggering one). Fired on session.updated, with a timeout fallback. Capped +
    * guarded so it can never disrupt or freeze the session.
    */
-  private async flushGrounding() {
+  private flushGrounding() {
     if (this.groundingSent) return
     this.groundingSent = true
     let text = this.pendingGrounding
     this.pendingGrounding = undefined
-
-    // 1) Textual grounding: structured facts (labels, counts, screenshot hosts).
-    if (text && text.trim()) {
-      if (text.length > 8000) text = `${text.slice(0, 8000)}…`
-      try {
-        this.send({
-          type: 'conversation.item.create',
-          item: {
-            type: 'message',
-            role: 'user',
-            content: [{ type: 'input_text', text }],
-          },
-        })
-      } catch {
-        /* non-fatal */
-      }
-    }
-
-    // 2) Visual grounding: an actual screenshot of the whole canvas, so the model
-    // can SEE content text can't convey (e.g. that an image is a website snapshot).
-    // Best-effort and guarded — capture can never disrupt the session.
+    if (!text || !text.trim()) return
+    if (text.length > 8000) text = `${text.slice(0, 8000)}…`
+    // Text-only grounding. We deliberately do NOT inject a canvas screenshot here:
+    // a full-canvas PNG can exceed the WebRTC data-channel message limit and kill
+    // the session (voice goes silent). The model can still SEE the board on demand
+    // via capture_canvas, which the grounding text points it to.
     try {
-      const image = await this.callbacks.getCanvasImage?.()
-      if (image) {
-        this.send({
-          type: 'conversation.item.create',
-          item: {
-            type: 'message',
-            role: 'user',
-            content: [
-              {
-                type: 'input_text',
-                text: '[AUTOMATED CONTEXT — not from the user] This is a screenshot of the current canvas you are resuming, so you can see exactly what is on it — including any website snapshots or generated images. Do NOT thank the user for this or mention screenshots; just use it to ground yourself.',
-              },
-              { type: 'input_image', image_url: image },
-            ],
-          },
-        })
-      }
+      this.send({
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text }],
+        },
+      })
     } catch {
-      /* non-fatal: the session still works without the visual grounding */
+      /* non-fatal: the session still works without the grounding */
     }
   }
 

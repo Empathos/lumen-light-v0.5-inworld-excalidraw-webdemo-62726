@@ -136,8 +136,12 @@ export function summarizeScene(api: ExcalidrawImperativeAPI | null): string | nu
   if (uniqLabels.length) {
     lines.push(`Text and labels present: ${uniqLabels.map((l) => `"${l}"`).join(', ')}.`)
   }
+  const hasImages = screenshots.length > 0 || generated.length > 0 || untaggedImages > 0
   lines.push(
-    'If the user refers to "this", "the diagram", "what we made", etc., they mean the above. To see the exact layout, call capture_canvas.',
+    'If the user refers to "this", "the diagram", "what we made", etc., they mean the above.' +
+      (hasImages
+        ? ' Some items are images (e.g. website snapshots or generated pictures) whose content you cannot read from this text — if the user asks what an image is or shows, call capture_canvas to actually see the board before answering.'
+        : ' To see the exact layout, call capture_canvas.'),
   )
   return lines.join('\n')
 }
