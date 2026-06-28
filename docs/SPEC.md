@@ -172,9 +172,16 @@ and the dialogue it is continuing:
 - **Conversation recap** — `src/assistant/transcriptStore.ts` replays the last
   ~12 turns of the persisted transcript (`lumen-transcript-v1`).
   ([ADR-0010](decisions/ADR-0010-persist-conversation-transcript.md))
+- **Visual grounding (conditional)** — when the board contains images, a
+  full-canvas screenshot is also injected as an `input_image`, so the model can
+  *see* content text can't read (e.g. that an image is a website snapshot).
+  Skipped for image-free boards. Via `getCanvasImage`.
+  ([ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md))
 
-Both are concatenated and injected via `RealtimeClient`'s `getSessionGrounding`
-callback. Either may be empty (e.g. a blank canvas or a first-ever session).
+The text parts are concatenated and injected via `RealtimeClient`'s
+`getSessionGrounding` callback (after `session.updated`, never blocking connect);
+the screenshot follows via `getCanvasImage`. Any part may be empty (e.g. a blank
+canvas or a first-ever session).
 
 ### Behavioral rules
 

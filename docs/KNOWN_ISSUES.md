@@ -82,6 +82,15 @@ screenshot's URL or a generated image's prompt — which `summarizeScene` now
 surfaces ("2 website screenshots (google.com, cnn.com)"). Images placed before
 this change have no tag and still show as a generic count.
 
+**Visual-grounding follow-up (2026-06-28):** text still couldn't convey image
+*content* — the model saw "two images" and assumed they were generated when they
+were website snapshots. Fixed by also injecting a full-canvas screenshot as an
+`input_image` on resume when the board has images (text-only otherwise), so the
+model can actually see them. See
+[ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md). This also covers the
+legacy untagged images above, since the model now sees them rather than relying on
+the metadata.
+
 **Timing follow-up (2026-06-28):** the first cut injected the grounding
 synchronously in the data-channel `open` handler, *before* `session.updated`. That
 caused two live regressions — the model still saw a blank canvas (the item landed
