@@ -1,7 +1,7 @@
 # Lumen Light
 
-A voice-and-text **thinking canvas** where an AI collaborator diagrams your
-conversation as it happens.
+A voice-and-text **thinking canvas** where an AI collaborator diagrams, generates pictures, screenshots websites,your
+conversation as it happens with her own opinions and directions.
 
 You open a large open whiteboard (Excalidraw), talk or type, and the assistant
 turns what you say into flow diagrams, shapes, generated images, and structure in
