@@ -140,6 +140,23 @@ the data-channel size risk that killed auto-screenshots
 ([ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md)). Structure comes
 from `read_canvas`; pixels still come from `capture_canvas`.
 
+### `clear_canvas` (full wipe, confirmed)
+
+`{ confirmed?, restore? }`. Removes **everything** — the diagram, sticky notes,
+generated images, website screenshots, and the briefing document (memory +
+`lumen-doc-v1`) — unlike a redraw, which only replaces the tool-drawn diagram.
+Because the scene persists and there is no cross-wipe undo in Excalidraw, the
+tool enforces safety itself rather than trusting the model to ask:
+
+- **Two-step confirm:** a call without `confirmed: true` clears nothing and
+  returns `needs_confirmation` plus an `about_to_clear` inventory; the model
+  must get an explicit yes from the user, then call again with
+  `confirmed: true`.
+- **Undo snapshot:** just before wiping, the full board is stashed to
+  `lumen-scene-undo-v1` / `lumen-doc-undo-v1` (`src/canvas/clearScene.ts`, one
+  slot, overwritten per clear). `clear_canvas` with `restore: true` brings it
+  back, including the doc window content.
+
 ### `generate_image`
 
 `{ prompt, aspect?, x?, y? }`. Generates an image via Google Gemini ("Nano

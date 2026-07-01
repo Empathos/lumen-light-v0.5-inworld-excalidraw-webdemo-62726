@@ -54,6 +54,10 @@ Branch `v0.5-inworld-62426-excalidraw`. Working today:
   inventory of the canvas at any time (shapes, screenshots by site, generated
   images, document, labels), so it knows what's on the board mid-session
   without taking a screenshot.
+- **Clear the board by voice (`clear_canvas`)** — "clear everything off the
+  canvas" wipes the whole board (diagram, images, screenshots, document), but
+  only after the agent confirms out loud — and a snapshot is kept so "bring it
+  back" undoes an accidental clear.
 - **A resizable, hideable conversation panel** (drag to resize; tab to hide it
   off-screen and bring it back), and an **installable PWA** (web-app manifest +
   service worker) so it can be added to a phone home screen.
@@ -140,6 +144,7 @@ The agent drives everything through these tools. Voice and text resolve to the
 | `draw_flow` | Shortcut for quick linear flowcharts (`start`/`process`/`decision`/`end` → shapes + bound arrows). |
 | `capture_canvas` | Screenshot the canvas and feed it back to the model as an image, so it can *see* its own layout and call a draw tool again to realign. |
 | `read_canvas` | On-demand text inventory of the board (shapes, connectors, screenshots by site, generated images by prompt, document, labels) — the cheap way for the model to check what's on the canvas mid-session. |
+| `clear_canvas` | Wipe the whole board — diagram, images, screenshots, and document — with a tool-enforced confirmation step and a restorable undo snapshot (`restore: true`). |
 | `generate_image` | Generate an image from a prompt (Google "Nano Banana") and place it on the canvas. Persists across draws. |
 | `screenshot_website` | Capture a live public web page and place it on the canvas as an image. Persists across draws. |
 | `web_search` | Search the live web; returns a synthesized answer plus source results (title, url, snippet). |
