@@ -7,6 +7,7 @@ index) as a record. Fixes should reference the bug id in the commit message.
 |----|-------|----------|--------|
 | [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | ✅ Resolved |
 | [BUG-002](#bug-002) | Assistant can't check what's on the canvas mid-session (stale picture) | High | ✅ Resolved |
+| [BUG-003](#bug-003) | Assistant can't clear the canvas ("clear everything" does nothing) | High | ✅ Resolved |
 
 ---
 
@@ -151,3 +152,51 @@ content.
 - Reading image *content* without downscaling — URL-by-reference vision
   (Tier 2), gated on verifying Inworld accepts a remote `image_url`.
 - Structured inventory with stable element ids (Tier 3 canvas-state work).
+
+---
+
+## BUG-003
+
+**Assistant can't clear the canvas ("clear everything off the canvas" does nothing)**
+
+- **Severity:** High (a capability the user relied on visibly stopped working —
+  reported live 2026-06-29 alongside BUG-002)
+- **Status:** ✅ Resolved — 2026-07-01 via the `clear_canvas` tool.
+- **Reported:** 2026-06-29
+
+### Steps to reproduce
+1. Put durable content on the board (a website screenshot, a generated image,
+   or the briefing document) plus a diagram.
+2. Ask the assistant to "clear everything off of the canvas."
+
+### Expected
+The whole board is wiped (ideally after a confirmation), leaving a blank canvas.
+
+### Actual
+Nothing is removed, or only the diagram changes. The assistant has no way to
+comply and may claim it cleared the board when it didn't.
+
+### Root cause (verified in code)
+There was never a clear-canvas capability. No tool deletes elements; the only
+"clearing" that ever existed was a side effect of drawing — `commitSkeleton`
+replaces the previous *diagram* on each draw call, and it early-returns on an
+empty element list, so the model can't even clear by drawing nothing. The
+illusion of a working "clear" held only while the board contained nothing but
+the diagram; once durable assets existed (screenshots, generated images, the
+doc window — all deliberately redraw-proof), it visibly broke.
+
+### Resolution
+New `clear_canvas` tool (`{ confirmed?, restore? }`): wipes the entire board —
+diagram, images, screenshots, and the briefing document. Safety is enforced by
+the tool, not model memory: a call without `confirmed: true` clears nothing and
+returns `needs_confirmation` (plus an inventory of what would be lost), so the
+model must get an explicit yes first. Before wiping, the full board is stashed
+to `lumen-scene-undo-v1` / `lumen-doc-undo-v1` (`src/canvas/clearScene.ts`),
+and `restore: true` brings it back — an accidental clear is no longer
+permanent. Small text over the data channel; no size risk.
+
+### Remaining (deferred — separate from this bug)
+- Save-before-clear into the user's **Excalidraw Library** (visible, re-insertable
+  stash) — Tier 3, pending verification that binary image files and the
+  embeddable round-trip through library items.
+- Partial clears ("just the images", "keep the diagram") — scope by kind.
