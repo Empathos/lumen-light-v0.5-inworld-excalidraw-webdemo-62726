@@ -6,6 +6,7 @@ index) as a record. Fixes should reference the bug id in the commit message.
 | ID | Title | Severity | Status |
 |----|-------|----------|--------|
 | [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | ✅ Resolved |
+| [BUG-002](#bug-002) | Assistant can't check what's on the canvas mid-session (stale picture) | High | ✅ Resolved |
 
 ---
 
@@ -104,3 +105,49 @@ injection until `session.updated`** (with a 1.5s fallback and a one-shot guard).
 - **Cross-device / server-side** session storage and identity — land with
   authentication + the platform. The current persistence is device-local
   (`localStorage`).
+
+---
+
+## BUG-002
+
+**Assistant can't check what's on the canvas mid-session (works from a stale picture)**
+
+- **Severity:** High (the assistant reported the canvas wrong / couldn't answer
+  "what do we have here?" in live use — 2026-06-29)
+- **Status:** ✅ Resolved — 2026-07-01 via the `read_canvas` tool.
+- **Reported:** 2026-06-29
+
+### Steps to reproduce
+1. Start a session and add content over time (draw, screenshot a website,
+   generate an image).
+2. Later in the same session, ask the assistant what is on the canvas.
+
+### Expected
+The assistant knows the current board state and describes it accurately.
+
+### Actual
+The assistant answers from its connect-time grounding (BUG-001), which is a
+one-shot snapshot: anything added *after* connect, or beyond the summary's
+caps, isn't in it. Its only refresh path was `capture_canvas` — a heavyweight
+screenshot it rarely chose to call for a simple "what's here?" question — so it
+guessed, or reported the canvas as emptier than it was.
+
+### Root cause (verified in code)
+The scene description (`summarizeScene`) was wired only into session-start
+grounding (`getSessionGrounding` in `src/App.tsx`); the model had no tool to
+request it on demand. Perception was connect-time-only text or on-demand pixels,
+with nothing in between.
+
+### Resolution
+New `read_canvas` tool (no args): returns the live scene inventory —
+`describeScene()` in `src/canvas/summarizeScene.ts`, the same derived
+description used for grounding, minus the resume framing — as a small text tool
+result. Bounded by design (≤40 labels, 60 chars each), so it carries none of
+the data-channel size risk that reverted ADR-0011. Session instructions now
+route the model: `read_canvas` for state, `capture_canvas` for layout/image
+content.
+
+### Remaining (deferred — separate from this bug)
+- Reading image *content* without downscaling — URL-by-reference vision
+  (Tier 2), gated on verifying Inworld accepts a remote `image_url`.
+- Structured inventory with stable element ids (Tier 3 canvas-state work).
