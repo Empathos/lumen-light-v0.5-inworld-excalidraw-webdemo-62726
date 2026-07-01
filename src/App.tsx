@@ -7,7 +7,7 @@ import { drawFlowDiagram } from './canvas/drawFlow'
 import { normalizeFlowDiagram } from './canvas/normalizeFlow'
 import { drawCanvasElements, normalizeCanvasElements } from './canvas/drawCanvas'
 import { addImageToCanvas } from './canvas/addImage'
-import { summarizeScene } from './canvas/summarizeScene'
+import { describeScene, summarizeScene } from './canvas/summarizeScene'
 import { loadTranscript, saveTranscript, summarizeTranscript } from './assistant/transcriptStore'
 import {
   openDocument,
@@ -248,6 +248,14 @@ export function App() {
     }
   }, [])
 
+  const readCanvas = useCallback(() => {
+    const api = apiRef.current
+    if (!api) return { ok: false, error: 'canvas not ready' }
+    const canvas = describeScene(api)
+    if (!canvas) return { ok: true, empty: true, note: 'canvas is empty' }
+    return { ok: true, canvas }
+  }, [])
+
   // Dev-only hook so the rich canvas tool can be exercised without a live
   // (paid, mic-gated) realtime session. Mirrors what the model's draw_canvas
   // tool call does. Available as window.__lumenDrawCanvas(elements) in dev.
@@ -256,6 +264,7 @@ export function App() {
     const w = window as unknown as Record<string, unknown>
     w.__lumenDrawCanvas = (elements: unknown) => drawCanvasFromArgs({ elements })
     w.__lumenCapture = () => captureCanvas()
+    w.__lumenReadCanvas = () => readCanvas()
     w.__lumenGenerateImage = (prompt: string, aspect?: string) =>
       generateImageFromArgs({ prompt, aspect })
     // Place a local data URL directly (no API call) for testing image rendering.
@@ -275,6 +284,7 @@ export function App() {
   }, [
     drawCanvasFromArgs,
     captureCanvas,
+    readCanvas,
     generateImageFromArgs,
     openDocumentFromArgs,
     highlightFromArgs,
@@ -303,6 +313,7 @@ export function App() {
         if (name === 'draw_canvas') return drawCanvasFromArgs(args)
         if (name === 'draw_flow') return drawFlowFromArgs(args)
         if (name === 'capture_canvas') return captureCanvas()
+        if (name === 'read_canvas') return readCanvas()
         if (name === 'generate_image') return generateImageFromArgs(args)
         if (name === 'open_document') return openDocumentFromArgs(args)
         if (name === 'highlight_passage') return highlightFromArgs(args)
@@ -318,6 +329,7 @@ export function App() {
   }, [
     addMessage,
     captureCanvas,
+    readCanvas,
     drawCanvasFromArgs,
     drawFlowFromArgs,
     generateImageFromArgs,

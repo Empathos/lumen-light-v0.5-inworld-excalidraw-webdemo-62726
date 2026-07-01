@@ -112,7 +112,12 @@ what the previous call drew. Speak briefly and naturally while you draw; the
 canvas is the main output, not your words. Don't read the diagram aloud
 element-by-element.
 
-You cannot see the canvas unless you look. After drawing something non-trivial,
+You cannot see the canvas unless you look. You have two ways to look:
+read_canvas returns an instant text inventory of what is on the board (shapes,
+connectors, screenshots, images, document, labels) — use it whenever the user
+asks what's on the canvas or you're about to build on existing content and
+aren't sure what's there. capture_canvas returns an actual screenshot — use it
+when layout or image content matters. After drawing something non-trivial,
 call capture_canvas to get a screenshot of how it actually rendered. Inspect it
 for overlapping shapes, bad spacing, off-screen or cut-off elements, and
 connectors going to the wrong place — then call draw_canvas again with corrected
@@ -270,6 +275,18 @@ const CAPTURE_CANVAS_TOOL = {
   name: 'capture_canvas',
   description:
     'Take a screenshot of the current canvas so you can see how it actually rendered. Returns the image to you. Use it after drawing to verify layout (overlaps, spacing, off-screen or cut-off elements, misrouted connectors), then call draw_canvas again to realign if needed.',
+  parameters: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {},
+  },
+}
+
+const READ_CANVAS_TOOL = {
+  type: 'function',
+  name: 'read_canvas',
+  description:
+    'Get a fresh text inventory of what is currently on the canvas: counts of shapes and connectors, website screenshots (by site), generated images (by prompt), the open briefing document, and the text labels present. Instant and cheap — call it whenever you need to know what is on the board (the user asks "what do we have here?", you are about to add to or reorganize existing content, or you are unsure the board still matches your memory of it). It does NOT show layout or what images look like — call capture_canvas for those.',
   parameters: {
     type: 'object',
     additionalProperties: false,
@@ -454,6 +471,7 @@ export function buildSession(env: RealtimeEnv) {
       DRAW_CANVAS_TOOL,
       DRAW_FLOW_TOOL,
       CAPTURE_CANVAS_TOOL,
+      READ_CANVAS_TOOL,
       GENERATE_IMAGE_TOOL,
       OPEN_DOCUMENT_TOOL,
       HIGHLIGHT_PASSAGE_TOOL,

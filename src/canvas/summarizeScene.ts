@@ -1,12 +1,15 @@
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 
 /**
- * Re-grounding for resumed sessions (BUG-001). The canvas is the durable artifact
- * that ties a session together; when a new realtime session connects on a
- * non-empty board, we hand the model a compact textual description of what is
- * already on it so its understanding and the canvas refer to the same thing.
+ * Textual description of what is on the canvas. Two consumers:
  *
- * Derived, not stored: we read the live scene every connect, so the summary can
+ * - `summarizeScene` — re-grounding for resumed sessions (BUG-001): when a new
+ *   realtime session connects on a non-empty board, the model gets this as
+ *   automated context so its understanding and the canvas refer to the same thing.
+ * - `describeScene` — the `read_canvas` tool: the same inventory, on demand,
+ *   without the resume framing, so the model can re-check the board mid-session.
+ *
+ * Derived, not stored: we read the live scene on every call, so the summary can
  * never drift from what the user actually sees (unlike a saved transcript). For
  * exact layout the model can still call `capture_canvas`; this is the cheap,
  * always-on baseline.
@@ -30,12 +33,11 @@ function hostOf(url: string | undefined): string {
 }
 
 /**
- * Build the grounding message for the current scene, or `null` if the canvas is
- * empty / has nothing worth describing. The string is framed as automated
- * context (the model must not thank the user for it), mirroring the
- * `capture_canvas` convention.
+ * Plain inventory of the current scene, or `null` if the canvas is empty / has
+ * nothing worth describing. No session framing — this is what the `read_canvas`
+ * tool returns, and what `summarizeScene` wraps for re-grounding.
  */
-export function summarizeScene(api: ExcalidrawImperativeAPI | null): string | null {
+export function describeScene(api: ExcalidrawImperativeAPI | null): string | null {
   if (!api) return null
   const els = api.getSceneElements().filter((e) => !e.isDeleted)
   if (els.length === 0) return null
@@ -128,20 +130,32 @@ export function summarizeScene(api: ExcalidrawImperativeAPI | null): string | nu
 
   if (parts.length === 0 && uniqLabels.length === 0) return null
 
-  const lines = [
-    '[AUTOMATED CONTEXT — not from the user] You are resuming an existing canvas: the user stopped a previous session and has come back to the same board. The following is already on the canvas. Do NOT thank the user for this or announce it — just use it so you can refer to and build on what is already there.',
-    '',
-    `On the canvas now: ${parts.join(', ') || 'various elements'}.`,
-  ]
+  const lines = [`On the canvas now: ${parts.join(', ') || 'various elements'}.`]
   if (uniqLabels.length) {
     lines.push(`Text and labels present: ${uniqLabels.map((l) => `"${l}"`).join(', ')}.`)
   }
   const hasImages = screenshots.length > 0 || generated.length > 0 || untaggedImages > 0
   lines.push(
-    'If the user refers to "this", "the diagram", "what we made", etc., they mean the above.' +
-      (hasImages
-        ? ' Some items are images (e.g. website snapshots or generated pictures) whose content you cannot read from this text — if the user asks what an image is or shows, call capture_canvas to actually see the board before answering.'
-        : ' To see the exact layout, call capture_canvas.'),
+    hasImages
+      ? 'Some items are images (e.g. website snapshots or generated pictures) whose content you cannot read from this text — if the user asks what an image is or shows, call capture_canvas to actually see the board before answering.'
+      : 'To see the exact layout, call capture_canvas.',
   )
   return lines.join('\n')
+}
+
+/**
+ * Build the grounding message for the current scene, or `null` if the canvas is
+ * empty / has nothing worth describing. The string is framed as automated
+ * context (the model must not thank the user for it), mirroring the
+ * `capture_canvas` convention.
+ */
+export function summarizeScene(api: ExcalidrawImperativeAPI | null): string | null {
+  const description = describeScene(api)
+  if (!description) return null
+  return [
+    '[AUTOMATED CONTEXT — not from the user] You are resuming an existing canvas: the user stopped a previous session and has come back to the same board. The following is already on the canvas. Do NOT thank the user for this or announce it — just use it so you can refer to and build on what is already there.',
+    '',
+    description,
+    'If the user refers to "this", "the diagram", "what we made", etc., they mean the above.',
+  ].join('\n')
 }
