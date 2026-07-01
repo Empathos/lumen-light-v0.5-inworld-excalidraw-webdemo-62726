@@ -128,6 +128,18 @@ for legibility, PNG) and returns it to the model as an `input_image` so it can
 verify layout and call a draw tool again to realign. See
 [ADR-0005](decisions/ADR-0005-screenshot-feedback-loop.md).
 
+### `read_canvas` (state inventory)
+
+No args. Returns the same live-scene description used for session re-grounding
+(`describeScene` in `src/canvas/summarizeScene.ts`) — shapes/connectors,
+screenshots by host, generated images by prompt, the open-document title, and
+text labels — as a small tool result (`{ ok, canvas }`, or `{ ok, empty }` on a
+blank board). This is the model's cheap mid-session answer to "what's on the
+board?": text only, bounded (≤40 labels, 60 chars each), so it carries none of
+the data-channel size risk that killed auto-screenshots
+([ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md)). Structure comes
+from `read_canvas`; pixels still come from `capture_canvas`.
+
 ### `generate_image`
 
 `{ prompt, aspect?, x?, y? }`. Generates an image via Google Gemini ("Nano

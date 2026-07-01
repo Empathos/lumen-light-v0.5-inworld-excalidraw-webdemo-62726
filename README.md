@@ -134,6 +134,7 @@ The agent drives everything through these tools. Voice and text resolve to the
 | `draw_canvas` | **Primary.** Draw a free-form element list — shapes, sticky notes, text labels, and connectors with color/fill/size/position. Replaces the previous draw call. |
 | `draw_flow` | Shortcut for quick linear flowcharts (`start`/`process`/`decision`/`end` → shapes + bound arrows). |
 | `capture_canvas` | Screenshot the canvas and feed it back to the model as an image, so it can *see* its own layout and call a draw tool again to realign. |
+| `read_canvas` | On-demand text inventory of the board (shapes, connectors, screenshots by site, generated images by prompt, document, labels) — the cheap way for the model to check what's on the canvas mid-session. |
 | `generate_image` | Generate an image from a prompt (Google "Nano Banana") and place it on the canvas. Persists across draws. |
 | `screenshot_website` | Capture a live public web page and place it on the canvas as an image. Persists across draws. |
 | `web_search` | Search the live web; returns a synthesized answer plus source results (title, url, snippet). |
