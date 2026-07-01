@@ -15,7 +15,10 @@ import {
   getDocument,
   briefFromCanvas,
   initDocWindow,
+  clearDocument,
+  rehydrateDocument,
 } from './canvas/docWindow'
+import { snapshotBeforeClear, wipeBoard, restoreLastClear } from './canvas/clearScene'
 import { ConversationPanel } from './ui/ConversationPanel'
 import { MockAssistantProvider } from './assistant/mockProvider'
 import { RealtimeClient, type RealtimeStatus } from './realtime/RealtimeClient'
@@ -256,6 +259,39 @@ export function App() {
     return { ok: true, canvas }
   }, [])
 
+  const clearCanvas = useCallback((args: unknown) => {
+    const api = apiRef.current
+    if (!api) return { ok: false, error: 'canvas not ready' }
+    const a = (args ?? {}) as Record<string, unknown>
+    if (a.restore === true) {
+      const result = restoreLastClear(api)
+      if (result.ok) rehydrateDocument(api)
+      return result
+    }
+    const count = api.getSceneElements().filter((e) => !e.isDeleted).length
+    if (count === 0 && !getDocument().ok) {
+      return { ok: true, empty: true, note: 'canvas is already empty' }
+    }
+    if (a.confirmed !== true) {
+      return {
+        ok: true,
+        needs_confirmation: true,
+        about_to_clear: describeScene(api) ?? `${count} element${count === 1 ? '' : 's'}`,
+        note: 'Nothing was cleared. Ask the user out loud whether the WHOLE board should be wiped, and only after an explicit yes call clear_canvas again with confirmed: true.',
+      }
+    }
+    const snapshotSaved = snapshotBeforeClear(api)
+    const cleared = wipeBoard(api)
+    clearDocument()
+    return {
+      ok: true,
+      cleared,
+      note: snapshotSaved
+        ? 'Board wiped. A snapshot was saved — clear_canvas with restore: true brings it back if the user changes their mind.'
+        : 'Board wiped. The undo snapshot could not be saved, so this clear cannot be restored.',
+    }
+  }, [])
+
   // Dev-only hook so the rich canvas tool can be exercised without a live
   // (paid, mic-gated) realtime session. Mirrors what the model's draw_canvas
   // tool call does. Available as window.__lumenDrawCanvas(elements) in dev.
@@ -265,6 +301,8 @@ export function App() {
     w.__lumenDrawCanvas = (elements: unknown) => drawCanvasFromArgs({ elements })
     w.__lumenCapture = () => captureCanvas()
     w.__lumenReadCanvas = () => readCanvas()
+    w.__lumenClearCanvas = (opts?: { confirmed?: boolean; restore?: boolean }) =>
+      clearCanvas(opts ?? {})
     w.__lumenGenerateImage = (prompt: string, aspect?: string) =>
       generateImageFromArgs({ prompt, aspect })
     // Place a local data URL directly (no API call) for testing image rendering.
@@ -285,6 +323,7 @@ export function App() {
     drawCanvasFromArgs,
     captureCanvas,
     readCanvas,
+    clearCanvas,
     generateImageFromArgs,
     openDocumentFromArgs,
     highlightFromArgs,
@@ -314,6 +353,7 @@ export function App() {
         if (name === 'draw_flow') return drawFlowFromArgs(args)
         if (name === 'capture_canvas') return captureCanvas()
         if (name === 'read_canvas') return readCanvas()
+        if (name === 'clear_canvas') return clearCanvas(args)
         if (name === 'generate_image') return generateImageFromArgs(args)
         if (name === 'open_document') return openDocumentFromArgs(args)
         if (name === 'highlight_passage') return highlightFromArgs(args)
@@ -330,6 +370,7 @@ export function App() {
     addMessage,
     captureCanvas,
     readCanvas,
+    clearCanvas,
     drawCanvasFromArgs,
     drawFlowFromArgs,
     generateImageFromArgs,

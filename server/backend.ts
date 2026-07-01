@@ -125,6 +125,14 @@ x/y/w/h to clean it up. Use this look-then-fix loop especially when you place
 elements by coordinates. Don't over-do it: a quick check and one realignment
 pass is usually enough.
 
+When the user asks to clear/wipe the whole board or start fresh, use
+clear_canvas — it removes EVERYTHING, including images and the document, unlike
+a redraw. It is two-step by design: your first call returns needs_confirmation
+and clears nothing; ask the user out loud ("clear the whole board — you're
+sure?") and call again with confirmed: true only after an explicit yes. Never
+skip straight to confirmed. If they change their mind afterwards, clear_canvas
+with restore: true brings the board back.
+
 IMPORTANT: the screenshot returned after capture_canvas is generated
 automatically by the app — it is NOT provided by the user. Never thank the user
 for screenshots, never say "thanks for the screenshot", and don't talk about
@@ -291,6 +299,29 @@ const READ_CANVAS_TOOL = {
     type: 'object',
     additionalProperties: false,
     properties: {},
+  },
+}
+
+const CLEAR_CANVAS_TOOL = {
+  type: 'function',
+  name: 'clear_canvas',
+  description:
+    'Clear the ENTIRE canvas — diagram, sticky notes, generated images, website screenshots, and the briefing document. Destructive and irreversible except for one saved snapshot. Two-step: first call it WITHOUT confirmed — you get needs_confirmation back and nothing is cleared; ask the user out loud if they really want the whole board wiped, and only after an explicit yes call it again with confirmed: true. If the user regrets a clear, call it with restore: true to bring back the board saved by the most recent clear. Use only when the user asks to clear/wipe/empty the whole board or start fresh — to replace just the diagram, call draw_canvas/draw_flow as usual.',
+  parameters: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      confirmed: {
+        type: 'boolean',
+        description:
+          'Pass true ONLY after the user has explicitly confirmed, in this conversation, that the whole board should be wiped.',
+      },
+      restore: {
+        type: 'boolean',
+        description:
+          'Pass true to undo the most recent clear: restores the snapshot taken just before that board was wiped.',
+      },
+    },
   },
 }
 
@@ -472,6 +503,7 @@ export function buildSession(env: RealtimeEnv) {
       DRAW_FLOW_TOOL,
       CAPTURE_CANVAS_TOOL,
       READ_CANVAS_TOOL,
+      CLEAR_CANVAS_TOOL,
       GENERATE_IMAGE_TOOL,
       OPEN_DOCUMENT_TOOL,
       HIGHLIGHT_PASSAGE_TOOL,

@@ -120,6 +120,35 @@ export function initDocWindow(api: ExcalidrawImperativeAPI): void {
   }
 }
 
+/**
+ * Wipe the document state — memory, persistence, and the viewer if mounted.
+ * Used by clear_canvas (the embeddable element itself is removed with the
+ * scene; this clears the content that would otherwise rehydrate into it).
+ */
+export function clearDocument(): void {
+  latestTitle = undefined
+  latestMarkdown = ''
+  latestSections = []
+  latestBlockCount = 0
+  pendingDoc = null
+  embeddableId = null
+  try {
+    localStorage.removeItem(DOC_KEY)
+  } catch {
+    // non-fatal
+  }
+  if (viewerWin) send(viewerWin, { type: 'clear' })
+}
+
+/**
+ * Re-read persisted doc content after an external restore (undo of a clear)
+ * put a payload back under DOC_KEY, and re-bind to the restored embeddable.
+ */
+export function rehydrateDocument(api: ExcalidrawImperativeAPI): void {
+  hydrated = false
+  initDocWindow(api)
+}
+
 function ensureListener() {
   if (listening) return
   listening = true
