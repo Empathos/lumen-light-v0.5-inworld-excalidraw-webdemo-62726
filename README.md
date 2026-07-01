@@ -1,7 +1,8 @@
 # Lumen Light
 
-A voice-and-text **thinking canvas** where an AI collaborator diagrams, generates pictures, screenshots websites,your
-conversation as it happens with her own opinions and directions.
+A voice-and-text **thinking canvas** where an AI collaborator diagrams your
+conversation as it happens — generating pictures, screenshotting websites, and
+bringing her own opinions and directions.
 
 You open a large open whiteboard (Excalidraw), talk or type, and the assistant
 turns what you say into flow diagrams, shapes, generated images, and structure in
@@ -49,6 +50,10 @@ Branch `v0.5-inworld-62426-excalidraw`. Working today:
   `brief_from_canvas`)** — open or paste a document into a window on the canvas
   and have the agent walk you through it, highlighting passage by passage as it
   speaks — like a presenter taking a room through a document.
+- **Board awareness (`read_canvas`)** — the agent can check a live text
+  inventory of the canvas at any time (shapes, screenshots by site, generated
+  images, document, labels), so it knows what's on the board mid-session
+  without taking a screenshot.
 - **A resizable, hideable conversation panel** (drag to resize; tab to hide it
   off-screen and bring it back), and an **installable PWA** (web-app manifest +
   service worker) so it can be added to a phone home screen.
