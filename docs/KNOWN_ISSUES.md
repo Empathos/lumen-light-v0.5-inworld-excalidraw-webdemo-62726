@@ -8,6 +8,7 @@ index) as a record. Fixes should reference the bug id in the commit message.
 | [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | ✅ Resolved |
 | [BUG-002](#bug-002) | Assistant can't check what's on the canvas mid-session (stale picture) | High | ✅ Resolved |
 | [BUG-003](#bug-003) | Assistant can't clear the canvas ("clear everything" does nothing) | High | ✅ Resolved |
+| [BUG-004](#bug-004) | Assistant calls a visibly populated board "blank" after app restart | High | 🔍 Investigating (mitigation shipped) |
 
 ---
 
@@ -200,3 +201,46 @@ permanent. Small text over the data channel; no size risk.
   stash) — Tier 3, pending verification that binary image files and the
   embeddable round-trip through library items.
 - Partial clears ("just the images", "keep the diagram") — scope by kind.
+
+---
+
+## BUG-004
+
+**Assistant calls a visibly populated board "blank" after force-closing and reopening the app**
+
+- **Severity:** High (continuity promise broken in the user's hands, again)
+- **Status:** 🔍 Investigating — most likely cause fixed 2026-07-02, confirmation pending
+- **Reported:** 2026-07-02 (PWA, deployed site; the build running at the time predates the inventory refactor)
+
+### Steps to reproduce (as reported)
+1. Have content on the board; force-close the installed PWA.
+2. Reopen; the content is visible on the canvas (persistence worked).
+3. Start a session and ask "can you see what's on the canvas?" → "actually
+   it's a blank canvas."
+
+### Leading hypothesis (fix shipped)
+The scene summary only counted Lumen's own drawing vocabulary (closed shapes,
+arrows, text, tagged images, the doc window). **Anything the user draws by
+hand — freedraw pencil strokes, plain lines — was invisible to it**, so on a
+board of hand-drawn content `describeScene` returned `null`: the session
+grounding stayed silent about the canvas AND `read_canvas`/`capture_canvas`'s
+empty-path told the model "canvas is empty". The model honestly relayed what
+its tools said. (Flagged presciently by the ADR-0012 review; the inventory
+made such elements addressable as `unknown` nodes but the text renderer still
+skipped them.)
+
+**Fix:** `describeScene` now renders unknown-kind nodes as "N other elements
+(e.g. hand-drawn strokes or lines added by the user)" — a non-empty board can
+never again summarize to "empty". Locked by a test.
+
+### Alternative hypotheses (open until confirmed)
+- The PWA's service worker served a stale build (bundle observed on the
+  deployed site differed from the latest push at report time) — older builds
+  still had grounding, so this alone doesn't explain the symptom.
+- A grounding-delivery race after restart (session.updated timing) — would
+  need session logs to confirm; the 1.5s fallback should cover it.
+
+### To confirm
+On the deployed site (same browser profile as the PWA), run in the console:
+`JSON.parse(localStorage.getItem('lumen-scene-v1')).elements.map(e => e.type)`
+— if the types are mostly `freedraw`/`line`, the hypothesis is confirmed.
