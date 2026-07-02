@@ -1,14 +1,16 @@
 # Testing
 
 How we verify Lumen-Light / Beacon Table today, and where it's headed. This is honest
-about current coverage: the gates are real, the automated test suite is not built
-yet, and this doc names the priority targets.
+about current coverage: the gates are real, the unit suite is young (it started
+with the board inventory, ADR-0012), and this doc names the remaining priority
+targets.
 
 ## Current gates (run before every commit)
 
 ```bash
 npm run typecheck   # tsc -b, no emit — strict type contract across the app
 npm run build       # tsc -b && vite build — catches what dev mode hides
+npm test            # vitest run — unit tests for pure logic
 ```
 
 Both must pass clean. Strict TypeScript is doing a lot of the heavy lifting:
@@ -57,8 +59,15 @@ Good first end-to-end checks:
 
 ## Unit tests (highest-value targets)
 
-The pure functions are easy, fast, and protect the contract. No runner is wired
-up yet; Vitest is the natural fit for a Vite project. Prioritize:
+The pure functions are easy, fast, and protect the contract. Vitest is wired up
+(`npm test`); tests are co-located (`*.test.ts`). Covered so far:
+
+| Target | What is asserted |
+|--------|------------------|
+| `inventory/excalidrawAdapter.ts` | element→node/link mapping; tag round-trip; unknown-tag preservation; derived `source.*` tags win over stored |
+| `summarizeScene.ts` | inventory→text rendering (counts, hosts, labels, capture_canvas hints) |
+
+Remaining priority targets:
 
 | Target | What to assert |
 |--------|----------------|
@@ -78,7 +87,7 @@ up yet; Vitest is the natural fit for a Vite project. Prioritize:
 
 ## Definition of done for a change
 
-- `npm run typecheck` and `npm run build` pass.
+- `npm run typecheck`, `npm run build`, and `npm test` pass.
 - The relevant path was exercised in the browser against the live tool contract.
-- New pure logic ships with unit tests once a runner exists.
+- New pure logic ships with unit tests.
 - No secret in the diff.

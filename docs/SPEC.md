@@ -140,6 +140,16 @@ the data-channel size risk that killed auto-screenshots
 ([ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md)). Structure comes
 from `read_canvas`; pixels still come from `capture_canvas`.
 
+Both `read_canvas` and the grounding render their text from the **board
+inventory** (`src/canvas/inventory/`, [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md)):
+a canvas-agnostic model of the board — nodes and first-class links with stable
+ids, bounds, and open provenance-namespaced tags (`source.*` / `ai.*` /
+`user.*`, persisted on elements via `customData.lumenTags`; `source.*` is
+derived-only and cannot be spoofed by stored data). The schema
+(`schema.ts`) imports nothing from Excalidraw; `excalidrawAdapter.ts` is the
+only file allowed to. Future per-asset vision, board navigation, and
+annotation tools address the board through this layer.
+
 ### `clear_canvas` (full wipe, confirmed)
 
 `{ confirmed?, restore? }`. Removes **everything** — the diagram, sticky notes,
@@ -222,10 +232,10 @@ Either part may be empty (e.g. a blank canvas or a first-ever session).
 
 ## Testing Strategy
 
-See [`TESTING.md`](TESTING.md). Today: `npm run typecheck` + `npm run build` as
-gates, plus manual/automated browser verification. Pure functions
-(`normalizeFlow`, `normalizeCanvasElements`) are the priority targets for unit
-tests.
+See [`TESTING.md`](TESTING.md). Today: `npm run typecheck` + `npm run build` +
+`npm test` (vitest) as gates, plus manual/automated browser verification. The
+board inventory adapter and scene summarizer are unit-tested; `normalizeFlow`
+and `normalizeCanvasElements` are the next priority targets.
 
 ## Boundaries
 
