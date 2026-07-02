@@ -129,9 +129,9 @@ const Graph = ForceGraph3D()(document.getElementById('graph'))
     return group
   })
   .nodeLabel((n) => `<div class="panel tip"><b>${esc(n.id === '__hub__' ? n.item : n.id)}</b> · ${esc(n.kind)}${n.status ? ' · ' + esc(n.status) : ''}${n.ucxm ? ' · UCXM ' + esc(n.ucxm) : ''}<br>${esc(n.item)}${n.note ? '<br><span class="muted">' + esc(n.note) + '</span>' : ''}</div>`)
-  .linkColor((l) => (l.hub ? '#26263c' : '#3a3a55'))
-  .linkOpacity(0.55)
-  .linkWidth((l) => (l.hub ? 0.2 : 0.6))
+  .linkColor((l) => (l.hub ? '#2c2c46' : '#4a4a70'))
+  .linkOpacity(0.7)
+  .linkWidth((l) => (l.hub ? 0.8 : 1.8))
   .onNodeClick((n) => Graph.cameraPosition({ x: n.x * 1.4, y: n.y * 1.4, z: n.z * 1.4 + 60 }, n, 900))
 
 // Orientation to the core: fundamentals near the center, derivation cascades
