@@ -18,16 +18,18 @@ Backfilled 2026-07-02 from the sessions of 2026-06-27 → 2026-07-02.
 | RISK-001 | Big payloads kill voice channel | — | concept | | [ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md) | theme: Physics; X player defects ≥ ~256KB per message |
 | RISK-002 | Storage quota silently stops persistence | — | concept | | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | theme: Persistence; screenshot images are megabytes; quota ~5MB; saveScene swallows failure |
 | GAP-002 | Surface and survive storage-quota failures | RISK-002 | concept | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | U: prevents silent board loss; C: warn on save failure + slim scene; M: deterministic |
-| GAP-001 | Verify Inworld accepts remote image_url | RISK-001 | concept | ++?0 | [KNOWN_ISSUES](KNOWN_ISSUES.md) | U: unlocks vision tier; C: one-session spike; X: the unknown itself; gates IDEA-001/003 |
+| GAP-001 | Verify Inworld accepts remote image_url | RISK-001 | built | ++-0 | [KNOWN_ISSUES](KNOWN_ISSUES.md) | verified 2026-07-02: Inworld fetches URLs, but Google-backed router rejects http(s) — inline base64 or gs:// only; X resolved to − for current stack |
 
 ## Ideas
 
 | ID | Item (≤5 words) | From | Status | UCXM | Proof | Note |
 |----|-----------------|------|--------|------|-------|------|
-| IDEA-001 | Full-res vision by URL reference | RISK-001 | idea | | | pixels over HTTP, not data channel |
+| IDEA-001 | Full-res vision by URL reference | RISK-001 | idea | ++-? | | X: − on current router (GAP-001); revives via IDEA-008 or IDEA-009 |
 | IDEA-002 | Cheap fixed-size whole-board overview | RISK-001 | idea | ++0? | | U: Waldo queries; C: export scaling exists; M: legibility at 768px unverified |
-| IDEA-003 | Per-asset zoom by node id | IDEA-001 | idea | | | look at one thing full-res |
+| IDEA-003 | Per-asset zoom by node id | IDEA-001 | idea | +++0 | | viable WITHOUT URLs: one asset as bounded data URL fits the channel |
 | IDEA-004 | Take-me-to board navigation | LL-005 | idea | +++0 | | U: conversational navigation; C: one scrollToContent call; X: bytes; M: label matching may miss |
 | IDEA-005 | Model annotates items with tags | LL-005 | idea | 0+0? | | C: write path exists; U: unclear until retrieval consumes tags; M: tagging quality unknown |
 | IDEA-006 | Save board to Excalidraw library | LL-004 | idea | | | visible stash before clear; binary round-trip unverified |
+| IDEA-008 | Host canvas images on GCS | GAP-001 | idea | | | gs:// URIs are the sanctioned Google path |
+| IDEA-009 | Non-Google router model for vision | GAP-001 | idea | | | the http(s) refusal is Google-specific per the error |
 | IDEA-007 | Selection and viewport as focus | LL-005 | idea | ++++ | | U: fixes "this one"; C: appState read; X: bytes; M: deterministic signal |
