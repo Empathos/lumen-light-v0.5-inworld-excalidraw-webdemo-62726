@@ -46,6 +46,24 @@ body {
   inset: 0;
 }
 
+.persistence-warning {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  max-width: min(620px, calc(100% - 40px));
+  padding: 9px 12px;
+  border: 1px solid #7a4b17;
+  border-radius: 8px;
+  background: #201810;
+  color: #ffdca8;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .app__resizer {
   flex: 0 0 6px;
   align-self: stretch;

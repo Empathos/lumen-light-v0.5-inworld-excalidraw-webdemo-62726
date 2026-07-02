@@ -7,6 +7,7 @@ import '@excalidraw/excalidraw/index.css'
 
 interface LumenCanvasProps {
   onReady: (api: ExcalidrawImperativeAPI) => void
+  onPersistenceChange?: (result: ReturnType<typeof saveScene>) => void
 }
 
 /**
@@ -15,7 +16,7 @@ interface LumenCanvasProps {
  * assistant loop can project diagrams into it, restore any saved scene, and
  * persist changes so a refresh/back-navigation doesn't wipe the canvas.
  */
-export function LumenCanvas({ onReady }: LumenCanvasProps) {
+export function LumenCanvas({ onReady, onPersistenceChange }: LumenCanvasProps) {
   const initialData = useMemo(() => {
     const saved = loadScene()
     const appState = {
@@ -34,9 +35,12 @@ export function LumenCanvas({ onReady }: LumenCanvasProps) {
   const handleChange = useCallback(
     (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(() => saveScene(elements, appState, files), 500)
+      saveTimer.current = setTimeout(() => {
+        const result = saveScene(elements, appState, files)
+        onPersistenceChange?.(result)
+      }, 500)
     },
-    [],
+    [onPersistenceChange],
   )
 
   return (

@@ -17,6 +17,14 @@ export interface RestoredScene {
   files: BinaryFiles
 }
 
+export interface SaveSceneResult {
+  ok: boolean
+  slimmed: boolean
+  attemptedBytes: number
+  storedBytes: number
+  error?: string
+}
+
 export function loadScene(): RestoredScene | null {
   try {
     const raw = localStorage.getItem(SCENE_KEY)
@@ -37,10 +45,39 @@ export function saveScene(
   elements: readonly ExcalidrawElement[],
   appState: AppState,
   files: BinaryFiles,
-): void {
+): SaveSceneResult {
+  const fullScene = serializeAsJSON(elements, appState, files, 'local')
   try {
-    localStorage.setItem(SCENE_KEY, serializeAsJSON(elements, appState, files, 'local'))
-  } catch {
-    // Quota or serialization failures are non-fatal; the canvas still works.
+    localStorage.setItem(SCENE_KEY, fullScene)
+    return {
+      ok: true,
+      slimmed: false,
+      attemptedBytes: fullScene.length,
+      storedBytes: fullScene.length,
+    }
+  } catch (err) {
+    const slimScene = serializeAsJSON(elements, appState, {}, 'local')
+    try {
+      localStorage.setItem(SCENE_KEY, slimScene)
+      return {
+        ok: true,
+        slimmed: true,
+        attemptedBytes: fullScene.length,
+        storedBytes: slimScene.length,
+        error: errorMessage(err),
+      }
+    } catch (slimErr) {
+      return {
+        ok: false,
+        slimmed: false,
+        attemptedBytes: fullScene.length,
+        storedBytes: 0,
+        error: errorMessage(slimErr),
+      }
+    }
   }
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'storage quota or localStorage failure'
 }

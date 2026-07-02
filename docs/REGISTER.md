@@ -17,7 +17,7 @@ Backfilled 2026-07-02 from the sessions of 2026-06-27 → 2026-07-02.
 | LL-007 | Model recognizes freehand drawings | LL-006 | built | | [KNOWN_ISSUES](KNOWN_ISSUES.md) | verified live: "house with sun" |
 | RISK-001 | Big payloads kill voice channel | — | concept | | [ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md) | theme: Physics; X player defects ≥ ~256KB per message |
 | RISK-002 | Storage quota silently stops persistence | — | concept | | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | theme: Persistence; screenshot images are megabytes; quota ~5MB; saveScene swallows failure |
-| GAP-002 | Surface and survive storage-quota failures | RISK-002 | concept | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | U: prevents silent board loss; C: warn on save failure + slim scene; M: deterministic |
+| GAP-002 | Surface and survive storage-quota failures | RISK-002 | built | ++0+ | [persistence](../src/canvas/persistence.ts), [test](../src/canvas/persistence.test.ts) | warns on failed save; falls back to slim scene without files |
 | GAP-001 | Verify Inworld accepts remote image_url | RISK-001 | built | ++-0 | [KNOWN_ISSUES](KNOWN_ISSUES.md) | verified 2026-07-02: Inworld fetches URLs, but Google-backed router rejects http(s) — inline base64 or gs:// only; X resolved to − for current stack |
 
 ## Ideas

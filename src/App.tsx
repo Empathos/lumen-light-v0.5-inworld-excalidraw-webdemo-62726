@@ -42,6 +42,7 @@ export function App() {
   const [status, setStatus] = useState<RealtimeStatus>('idle')
   const [micOn, setMicOn] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [persistenceWarning, setPersistenceWarning] = useState<string | null>(null)
 
   const [panelWidth, setPanelWidth] = useState(() => {
     const saved = Number(localStorage.getItem(PANEL_KEY))
@@ -96,6 +97,16 @@ export function App() {
     apiRef.current = api
     // Re-bind/repopulate a persisted briefing window after reload or back-nav.
     initDocWindow(api)
+  }, [])
+
+  const handlePersistenceChange = useCallback((result: { ok: boolean; slimmed: boolean }) => {
+    if (!result.ok) {
+      setPersistenceWarning('Board changes are not saving. Export before closing this session.')
+    } else if (result.slimmed) {
+      setPersistenceWarning('Storage is nearly full. Text and layout saved; image files may need export.')
+    } else {
+      setPersistenceWarning(null)
+    }
   }, [])
 
   const drawFlowFromArgs = useCallback((args: unknown) => {
@@ -438,7 +449,12 @@ export function App() {
       style={{ ['--panel-w']: `${panelWidth}px` } as CSSProperties}
     >
       <main className="canvas-wrap">
-        <LumenCanvas onReady={handleReady} />
+        {persistenceWarning ? (
+          <div className="persistence-warning" role="status">
+            {persistenceWarning}
+          </div>
+        ) : null}
+        <LumenCanvas onReady={handleReady} onPersistenceChange={handlePersistenceChange} />
       </main>
       <div
         className="app__resizer"
