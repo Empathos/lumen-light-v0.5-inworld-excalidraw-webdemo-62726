@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Graphify — Lumen Light (LL-)</title>
+<title>Graphify</title>
 <style>
   html, body { margin: 0; height: 100%; background: #050510; font: 13px/1.45 system-ui, sans-serif; }
   #graph { position: absolute; inset: 0; }
@@ -11,6 +11,8 @@
   #hdr { top: 16px; left: 16px; max-width: 380px; }
   #hdr h1 { margin: 0 0 2px; font-size: 16px; color: #eceef4; font-weight: 600; }
   #hdr p { margin: 0; color: #8f92a3; font-size: 12px; }
+  #mode { margin-top: 6px; font-size: 11px; color: #8f92a3; }
+  #mode .live { color: #4cc38a; } #mode .snap { color: #c9930a; }
   #legend { bottom: 16px; left: 16px; }
   #legend div { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
   #legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
@@ -21,50 +23,115 @@
 </head>
 <body>
 <div id="graph"></div>
-<div id="hdr" class="panel"><h1>Graphify — Lumen Light (LL-)</h1>
-<p>QTrellis register lineage · drag to orbit, scroll to zoom, hover a node · derived view — regenerate, never edit</p></div>
-<div id="legend" class="panel">
-<div><i style="background:#2e9e5b"></i>LL-001 — Session re-grounding from canvas</div>
-<div><i style="background:#d6519f"></i>LL-004 — Clear canvas, confirmed, undoable</div>
-<div><i style="background:#b3830a"></i>LL-005 — Board inventory, extensible tagging</div>
-<div><i style="background:#3f7fd4"></i>RISK-001 — Big payloads kill voice channel</div>
-<div><i style="background:#8a8a92"></i>RISK-002 — Storage quota silently stops persistence</div>
-<div class="dim">size = descendants · brightness = lifecycle (built bright → idea faint)</div>
-</div>
+<div id="hdr" class="panel"><h1 id="title">Graphify</h1>
+<p>QTrellis register lineage · drag to orbit, scroll to zoom, hover a node · derived view — regenerate, never edit</p>
+<div id="mode">loading…</div></div>
+<div id="legend" class="panel"></div>
 <script type="module">
 // esm.sh rewrites the whole bare-import tree; ?deps pins one shared three
 // instance so our meshes and the graph's renderer use the same classes.
 import ForceGraph3D from 'https://esm.sh/3d-force-graph@1.79.0?deps=three@0.180.0'
 import * as THREE from 'https://esm.sh/three@0.180.0'
 
-const data = {"nodes":[{"id":"LL-001","item":"Session re-grounding from canvas","status":"built","ucxm":"","note":"resolved BUG-001 gap 1","root":"LL-001","color":"#2e9e5b","val":14,"glow":1},{"id":"LL-002","item":"Conversation transcript persists locally","status":"built","ucxm":"","note":"resolved BUG-001 gap 2","root":"LL-001","color":"#2e9e5b","val":2,"glow":1},{"id":"LL-003","item":"Read canvas text inventory","status":"built","ucxm":"++++","note":"U: fixes blindness; C: 30min reuse; X: tiny text; M: no-arg tool","root":"LL-001","color":"#2e9e5b","val":8,"glow":1},{"id":"LL-004","item":"Clear canvas, confirmed, undoable","status":"built","ucxm":"++0+","note":"U: restores lost capability; C: small; M: tool enforces confirm, not memory","root":"LL-004","color":"#d6519f","val":5,"glow":1},{"id":"LL-005","item":"Board inventory, extensible tagging","status":"built","ucxm":"++0+","note":"U: unlocks addressing; C: one tested module; M: closed schema","root":"LL-005","color":"#b3830a","val":11,"glow":1},{"id":"LL-006","item":"Hand-drawn content never invisible","status":"built","ucxm":"","note":"resolved BUG-004","root":"LL-001","color":"#2e9e5b","val":5,"glow":1},{"id":"LL-007","item":"Model recognizes freehand drawings","status":"built","ucxm":"","note":"verified live: \"house with sun\"","root":"LL-001","color":"#2e9e5b","val":2,"glow":1},{"id":"RISK-001","item":"Big payloads kill voice channel","status":"concept","ucxm":"","note":"X player defects ≥ ~256KB per message","root":"RISK-001","color":"#3f7fd4","val":14,"glow":0.55},{"id":"RISK-002","item":"Storage quota silently stops persistence","status":"concept","ucxm":"","note":"screenshot images are megabytes; quota ~5MB; saveScene swallows failure","root":"RISK-002","color":"#8a8a92","val":5,"glow":0.55},{"id":"GAP-002","item":"Surface and survive storage-quota failures","status":"concept","ucxm":"++0+","note":"U: prevents silent board loss; C: warn on save failure + slim scene; M: deterministic","root":"RISK-002","color":"#8a8a92","val":2,"glow":0.55},{"id":"GAP-001","item":"Verify Inworld accepts remote image_url","status":"concept","ucxm":"++?0","note":"U: unlocks vision tier; C: one-session spike; X: the unknown itself; gates IDEA-001/003","root":"RISK-001","color":"#3f7fd4","val":2,"glow":0.55},{"id":"IDEA-001","item":"Full-res vision by URL reference","status":"idea","ucxm":"","note":"pixels over HTTP, not data channel","root":"RISK-001","color":"#3f7fd4","val":5,"glow":0.35},{"id":"IDEA-002","item":"Cheap fixed-size whole-board overview","status":"idea","ucxm":"++0?","note":"U: Waldo queries; C: export scaling exists; M: legibility at 768px unverified","root":"RISK-001","color":"#3f7fd4","val":2,"glow":0.35},{"id":"IDEA-003","item":"Per-asset zoom by node id","status":"idea","ucxm":"","note":"look at one thing full-res","root":"RISK-001","color":"#3f7fd4","val":2,"glow":0.35},{"id":"IDEA-004","item":"Take-me-to board navigation","status":"idea","ucxm":"+++0","note":"U: conversational navigation; C: one scrollToContent call; X: bytes; M: label matching may miss","root":"LL-005","color":"#b3830a","val":2,"glow":0.35},{"id":"IDEA-005","item":"Model annotates items with tags","status":"idea","ucxm":"0+0?","note":"C: write path exists; U: unclear until retrieval consumes tags; M: tagging quality unknown","root":"LL-005","color":"#b3830a","val":2,"glow":0.35},{"id":"IDEA-006","item":"Save board to Excalidraw library","status":"idea","ucxm":"","note":"visible stash before clear; binary round-trip unverified","root":"LL-004","color":"#d6519f","val":2,"glow":0.35},{"id":"IDEA-007","item":"Selection and viewport as focus","status":"idea","ucxm":"++++","note":"U: fixes \"this one\"; C: appState read; X: bytes; M: deterministic signal","root":"LL-005","color":"#b3830a","val":2,"glow":0.35}],"links":[{"source":"LL-001","target":"LL-002"},{"source":"LL-001","target":"LL-003"},{"source":"LL-003","target":"LL-006"},{"source":"LL-006","target":"LL-007"},{"source":"RISK-002","target":"GAP-002"},{"source":"RISK-001","target":"GAP-001"},{"source":"RISK-001","target":"IDEA-001"},{"source":"RISK-001","target":"IDEA-002"},{"source":"IDEA-001","target":"IDEA-003"},{"source":"LL-005","target":"IDEA-004"},{"source":"LL-005","target":"IDEA-005"},{"source":"LL-004","target":"IDEA-006"},{"source":"LL-005","target":"IDEA-007"}]}
+const SOURCE = "REGISTER.md"
+const EMBEDDED = "# Product Register — Lumen Light (LL-)\n\nQTrellis register. Rules: `~/.claude/skills/qtrellis/SKILL.md`\nStable = UCXM has no − and no ?. Scores are lazy and must carry reasons.\nBackfilled 2026-07-02 from the sessions of 2026-06-27 → 2026-07-02.\n\n## Register\n\n| ID | Item (≤5 words) | From | Status | UCXM | Proof | Note |\n|----|-----------------|------|--------|------|-------|------|\n| LL-001 | Session re-grounding from canvas | — | built | | [ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md) | resolved BUG-001 gap 1 |\n| LL-002 | Conversation transcript persists locally | LL-001 | built | | [ADR-0010](decisions/ADR-0010-persist-conversation-transcript.md) | resolved BUG-001 gap 2 |\n| LL-003 | Read canvas text inventory | LL-001 | built | ++++ | [SPEC](SPEC.md) | U: fixes blindness; C: 30min reuse; X: tiny text; M: no-arg tool |\n| LL-004 | Clear canvas, confirmed, undoable | — | built | ++0+ | [SPEC](SPEC.md) | U: restores lost capability; C: small; M: tool enforces confirm, not memory |\n| LL-005 | Board inventory, extensible tagging | — | built | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | U: unlocks addressing; C: one tested module; M: closed schema |\n| LL-006 | Hand-drawn content never invisible | LL-003 | built | | [KNOWN_ISSUES](KNOWN_ISSUES.md) | resolved BUG-004 |\n| LL-007 | Model recognizes freehand drawings | LL-006 | built | | [KNOWN_ISSUES](KNOWN_ISSUES.md) | verified live: \"house with sun\" |\n| RISK-001 | Big payloads kill voice channel | — | concept | | [ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md) | X player defects ≥ ~256KB per message |\n| RISK-002 | Storage quota silently stops persistence | — | concept | | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | screenshot images are megabytes; quota ~5MB; saveScene swallows failure |\n| GAP-002 | Surface and survive storage-quota failures | RISK-002 | concept | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | U: prevents silent board loss; C: warn on save failure + slim scene; M: deterministic |\n| GAP-001 | Verify Inworld accepts remote image_url | RISK-001 | concept | ++?0 | [KNOWN_ISSUES](KNOWN_ISSUES.md) | U: unlocks vision tier; C: one-session spike; X: the unknown itself; gates IDEA-001/003 |\n\n## Ideas\n\n| ID | Item (≤5 words) | From | Status | UCXM | Proof | Note |\n|----|-----------------|------|--------|------|-------|------|\n| IDEA-001 | Full-res vision by URL reference | RISK-001 | idea | | | pixels over HTTP, not data channel |\n| IDEA-002 | Cheap fixed-size whole-board overview | RISK-001 | idea | ++0? | | U: Waldo queries; C: export scaling exists; M: legibility at 768px unverified |\n| IDEA-003 | Per-asset zoom by node id | IDEA-001 | idea | | | look at one thing full-res |\n| IDEA-004 | Take-me-to board navigation | LL-005 | idea | +++0 | | U: conversational navigation; C: one scrollToContent call; X: bytes; M: label matching may miss |\n| IDEA-005 | Model annotates items with tags | LL-005 | idea | 0+0? | | C: write path exists; U: unclear until retrieval consumes tags; M: tagging quality unknown |\n| IDEA-006 | Save board to Excalidraw library | LL-004 | idea | | | visible stash before clear; binary round-trip unverified |\n| IDEA-007 | Selection and viewport as focus | LL-005 | idea | ++++ | | U: fixes \"this one\"; C: appState read; X: bytes; M: deterministic signal |\n"
+const POLL_MS = 5000
 
+// ---- parse a QTrellis register (markdown) into graph data ----
+const PALETTE = ['#2e9e5b', '#d6519f', '#b3830a', '#3f7fd4'] // validated, dark surface
+const NEUTRAL = '#8a8a92'
+const BRIGHT = { built: 1.0, supported: 1.0, spec: 0.65, concept: 0.55, idea: 0.35, deferred: 0.2, superseded: 0.15 }
+
+function parseRegister(md) {
+  const rows = []
+  for (const line of md.split('\n')) {
+    if (!line.startsWith('|')) continue
+    const c = line.split('|').map((s) => s.trim())
+    if (c.length < 8) continue
+    const [, id, item, from, status, ucxm, , note] = c
+    if (!id || id === 'ID' || /^-+$/.test(id)) continue
+    rows.push({ id, item, from: from === '—' || from === '-' ? null : from, status, ucxm, note })
+  }
+  const byId = new Map(rows.map((r) => [r.id, r]))
+  const rootOf = (r) => {
+    let cur = r
+    const seen = new Set()
+    while (cur.from && byId.has(cur.from) && !seen.has(cur.id)) { seen.add(cur.id); cur = byId.get(cur.from) }
+    return cur.id
+  }
+  const clusterColor = new Map()
+  for (const r of rows) {
+    const root = rootOf(r)
+    if (!clusterColor.has(root)) clusterColor.set(root, PALETTE[clusterColor.size] ?? NEUTRAL)
+  }
+  const descendants = new Map(rows.map((r) => [r.id, 0]))
+  for (const r of rows) {
+    let cur = r
+    const seen = new Set()
+    while (cur.from && byId.has(cur.from) && !seen.has(cur.id)) {
+      seen.add(cur.id); cur = byId.get(cur.from)
+      descendants.set(cur.id, (descendants.get(cur.id) ?? 0) + 1)
+    }
+  }
+  return {
+    title: (md.match(/^# (.+)$/m) ?? [, 'Register'])[1].replace(/^Product Register — /, ''),
+    legend: [...clusterColor.entries()].map(([root, color]) => ({ root, item: byId.get(root)?.item ?? root, color })),
+    nodes: rows.map((r) => ({
+      id: r.id, item: r.item, status: r.status, ucxm: r.ucxm || '', note: r.note || '',
+      color: clusterColor.get(rootOf(r)), val: 2 + (descendants.get(r.id) ?? 0) * 3,
+      glow: BRIGHT[r.status] ?? 0.4,
+    })),
+    links: rows.filter((r) => r.from && byId.has(r.from)).map((r) => ({ source: r.from, target: r.id })),
+  }
+}
+
+// ---- render ----
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
 const Graph = ForceGraph3D()(document.getElementById('graph'))
   .backgroundColor('#050510')
-  .graphData(data)
   .nodeVal('val')
   .nodeThreeObject((n) => new THREE.Mesh(
     new THREE.SphereGeometry(Math.cbrt(n.val) * 2.4, 24, 24),
-    new THREE.MeshStandardMaterial({
-      color: n.color, roughness: 0.3, metalness: 0.15,
-      emissive: n.color, emissiveIntensity: n.glow,
-    })
+    new THREE.MeshStandardMaterial({ color: n.color, roughness: 0.3, metalness: 0.15, emissive: n.color, emissiveIntensity: n.glow })
   ))
   .nodeLabel((n) => `<div class="panel tip"><b>${esc(n.id)}</b> · ${esc(n.status)}${n.ucxm ? ' · UCXM ' + esc(n.ucxm) : ''}<br>${esc(n.item)}${n.note ? '<br><span class="muted">' + esc(n.note) + '</span>' : ''}</div>`)
   .linkColor(() => '#3a3a55')
   .linkOpacity(0.55)
   .linkWidth(0.6)
-  .onNodeClick((n) => {
-    const d = 60
-    Graph.cameraPosition({ x: n.x * 1.4, y: n.y * 1.4, z: n.z * 1.4 + d }, n, 900)
-  })
+  .onNodeClick((n) => Graph.cameraPosition({ x: n.x * 1.4, y: n.y * 1.4, z: n.z * 1.4 + 60 }, n, 900))
+
+function apply(md) {
+  const d = parseRegister(md)
+  document.getElementById('title').textContent = 'Graphify — ' + d.title
+  document.title = 'Graphify — ' + d.title
+  document.getElementById('legend').innerHTML =
+    d.legend.map((l) => `<div><i style="background:${l.color}"></i>${esc(l.root)} — ${esc(l.item)}</div>`).join('') +
+    '<div class="dim">size = descendants · brightness = lifecycle (built bright → idea faint)</div>'
+  Graph.graphData(d)
+}
+
+// ---- live source (QT-008): fetch fresh, poll for change; snapshot fallback ----
+const modeEl = document.getElementById('mode')
+let last = null
+async function refresh() {
+  const r = await fetch(SOURCE + '?t=' + Date.now(), { cache: 'no-store' })
+  if (!r.ok) throw new Error('HTTP ' + r.status)
+  const md = await r.text()
+  if (md !== last) { last = md; apply(md) }
+}
+try {
+  await refresh()
+  modeEl.innerHTML = '<span class="live">● live</span> — re-reads ' + esc(SOURCE) + ' every ' + POLL_MS / 1000 + 's'
+  setInterval(() => refresh().catch(() => {}), POLL_MS)
+} catch {
+  apply(EMBEDDED)
+  modeEl.innerHTML = '<span class="snap">● snapshot</span> — embedded at generation time (serve over http for live)'
+}
 
 // Bloom gives the glow; the graph is complete without it if the addon fails.
 try {
   const { UnrealBloomPass } = await import('https://esm.sh/three@0.180.0/examples/jsm/postprocessing/UnrealBloomPass.js?deps=three@0.180.0')
-  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.3, 0.6, 0.05)
-  Graph.postProcessingComposer().addPass(bloom)
+  Graph.postProcessingComposer().addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.3, 0.6, 0.05))
 } catch (e) { console.warn('bloom unavailable:', e) }
 </script>
 </body>
