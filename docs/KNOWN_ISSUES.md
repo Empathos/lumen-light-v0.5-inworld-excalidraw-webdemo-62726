@@ -8,7 +8,7 @@ index) as a record. Fixes should reference the bug id in the commit message.
 | [BUG-001](#bug-001) | Assistant loses awareness of the canvas + conversation across sessions | High | ✅ Resolved |
 | [BUG-002](#bug-002) | Assistant can't check what's on the canvas mid-session (stale picture) | High | ✅ Resolved |
 | [BUG-003](#bug-003) | Assistant can't clear the canvas ("clear everything" does nothing) | High | ✅ Resolved |
-| [BUG-004](#bug-004) | Assistant calls a visibly populated board "blank" after app restart | High | 🔍 Investigating (mitigation shipped) |
+| [BUG-004](#bug-004) | Assistant calls a visibly populated board "blank" after app restart | High | ✅ Resolved |
 
 ---
 
@@ -209,7 +209,11 @@ permanent. Small text over the data channel; no size risk.
 **Assistant calls a visibly populated board "blank" after force-closing and reopening the app**
 
 - **Severity:** High (continuity promise broken in the user's hands, again)
-- **Status:** 🔍 Investigating — most likely cause fixed 2026-07-02, confirmation pending
+- **Status:** ✅ Resolved — 2026-07-02. Fix verified end-to-end in a live
+  session driven by browser automation: a board seeded with only freedraw
+  strokes + a line, fresh app load, real Inworld session, question typed into
+  the panel — the assistant answered "Yeah, I see those three hand-drawn lines
+  on the board." (Pre-fix, `read_canvas` returned `empty` for the same board.)
 - **Reported:** 2026-07-02 (PWA, deployed site; the build running at the time predates the inventory refactor)
 
 ### Steps to reproduce (as reported)
