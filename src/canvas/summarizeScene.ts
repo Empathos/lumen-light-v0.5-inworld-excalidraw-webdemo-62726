@@ -99,10 +99,12 @@ export function describeScene(api: ExcalidrawImperativeAPI | null): string | nul
   if (uniqLabels.length) {
     lines.push(`Text and labels present: ${uniqLabels.map((l) => `"${l}"`).join(', ')}.`)
   }
-  const hasImages = screenshots.length > 0 || generated.length > 0 || untaggedImages > 0
+  // Anything visual — images OR hand-drawn content — can only be understood by
+  // looking. Point the model at capture_canvas so it recognizes, not just counts.
+  const hasVisual = screenshots.length > 0 || generated.length > 0 || untaggedImages > 0 || other > 0
   lines.push(
-    hasImages
-      ? 'Some items are images (e.g. website snapshots or generated pictures) whose content you cannot read from this text — if the user asks what an image is or shows, call capture_canvas to actually see the board before answering.'
+    hasVisual
+      ? 'Some items are visual (images, website snapshots, generated pictures, or hand-drawn strokes) whose content you cannot read from this text — if the user asks what something is, shows, or looks like, call capture_canvas to actually see the board before answering.'
       : 'To see the exact layout, call capture_canvas.',
   )
   return lines.join('\n')

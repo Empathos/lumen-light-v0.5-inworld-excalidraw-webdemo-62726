@@ -51,5 +51,8 @@ describe('describeScene', () => {
     const text = describeScene(apiWith([{ type: 'freedraw' }, { type: 'freedraw' }, { type: 'line' }]))
     expect(text).not.toBeNull()
     expect(text).toContain('3 other elements')
+    // Hand-drawn content is visual: the model must be pointed at capture_canvas
+    // so it can recognize what was drawn, not just count strokes.
+    expect(text).toContain('call capture_canvas to actually see the board')
   })
 })
