@@ -2,6 +2,7 @@ import { serializeAsJSON } from '@excalidraw/excalidraw'
 import type { BinaryFiles, ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import { DOC_STORAGE_KEY as DOC_KEY } from './docStorage'
+import { saveScene } from './persistence'
 
 /**
  * Full-board clear for the `clear_canvas` tool (BUG-003), with an undo
@@ -13,8 +14,8 @@ import { DOC_STORAGE_KEY as DOC_KEY } from './docStorage'
  * stash) is the deferred Tier-3 upgrade.
  */
 
-const SCENE_UNDO_KEY = 'lumen-scene-undo-v1'
-const DOC_UNDO_KEY = 'lumen-doc-undo-v1'
+export const SCENE_UNDO_KEY = 'lumen-scene-undo-v1'
+export const DOC_UNDO_KEY = 'lumen-doc-undo-v1'
 
 /** Stash the current scene + document to the undo keys. Best-effort. */
 export function snapshotBeforeClear(api: ExcalidrawImperativeAPI): boolean {
@@ -56,14 +57,26 @@ export function restoreLastClear(
   }
   if (!raw) return { ok: false, error: 'nothing to restore — no snapshot from a previous clear' }
   try {
-    const parsed = JSON.parse(raw) as { elements?: ExcalidrawElement[]; files?: BinaryFiles }
+    const parsed = JSON.parse(raw) as {
+      elements?: ExcalidrawElement[]
+      appState?: Record<string, unknown>
+      files?: BinaryFiles
+    }
     const elements = Array.isArray(parsed.elements) ? parsed.elements : []
     const files = parsed.files ?? {}
     const fileList = Object.values(files)
     if (fileList.length) api.addFiles(fileList)
-    api.updateScene({ elements })
+    const update: Parameters<ExcalidrawImperativeAPI['updateScene']>[0] = { elements }
+    if (parsed.appState) {
+      update.appState = parsed.appState as Parameters<
+        ExcalidrawImperativeAPI['updateScene']
+      >[0]['appState']
+    }
+    api.updateScene(update)
     const doc = localStorage.getItem(DOC_UNDO_KEY)
     if (doc) localStorage.setItem(DOC_KEY, doc)
+    else localStorage.removeItem(DOC_KEY)
+    saveScene(elements, api.getAppState(), api.getFiles())
     return { ok: true, restored: elements.filter((e) => !e.isDeleted).length }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) }

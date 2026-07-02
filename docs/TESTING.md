@@ -56,7 +56,7 @@ or Chromium is not in a standard location.
 Further browser checks should keep the same reconnaissance-then-action pattern:
 navigate, wait for the UI to become ready, inspect rendered state, then assert.
 Good next checks are malformed dev-hook `draw_canvas` payloads and reset/restore
-behavior.
+browser behavior.
 
 ## Unit tests (highest-value targets)
 
@@ -65,6 +65,7 @@ The pure functions are easy, fast, and protect the contract. Vitest is wired up
 
 | Target | What is asserted |
 |--------|------------------|
+| `clearScene.ts` | no-snapshot restore; document payload restore/removal; one-slot undo overwrite; restored scene re-persisted |
 | `inventory/excalidrawAdapter.ts` | element→node/link mapping; tag round-trip; unknown-tag preservation; derived `source.*` tags win over stored |
 | `summarizeScene.ts` | inventory→text rendering (counts, hosts, labels, capture_canvas hints) |
 
