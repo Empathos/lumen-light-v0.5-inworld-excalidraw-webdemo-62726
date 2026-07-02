@@ -11,11 +11,12 @@ targets.
 npm run typecheck   # tsc -b, no emit — strict type contract across the app
 npm run build       # tsc -b && vite build — catches what dev mode hides
 npm test            # vitest run — unit tests for pure logic
+npm run smoke:offline # headless browser smoke for the keyless typed canvas loop
 ```
 
-Both must pass clean. Strict TypeScript is doing a lot of the heavy lifting:
-the tool contract in `src/assistant/types.ts` and the canvas projectors are all
-statically checked.
+All four must pass clean for canvas-loop changes. Strict TypeScript is doing a
+lot of the heavy lifting: the tool contract in `src/assistant/types.ts` and the
+canvas projectors are all statically checked.
 
 ## Manual / browser verification
 
@@ -44,18 +45,18 @@ window.__lumenDrawCanvas([{ id: 'a', type: 'note', text: 'hi' }])
 window.__lumenCapture()
 ```
 
-## Automated browser tests (recommended next step)
+## Automated browser tests
 
-Drive the running app with Playwright. This project is documented under the
-agent-skills conventions, so use the **`webapp-testing`** skill: it manages
-server lifecycle (`scripts/with_server.py`) and runs native Python Playwright
-scripts. Reconnaissance-then-action: navigate, wait for `networkidle`,
-screenshot/inspect to find selectors, then assert.
+`npm run smoke:offline` launches Vite plus a headless Chromium/Chrome instance
+through the DevTools Protocol. It types `Idea -> Sketch -> Build -> Ship` into
+the offline composer and asserts that the 4-step flow renders and persists to
+`localStorage` with the expected labels and arrows. Set `CHROME_BIN` if Chrome
+or Chromium is not in a standard location.
 
-Good first end-to-end checks:
-- Offline `A -> B -> C` produces the expected node/edge count on the canvas.
-- A malformed dev-hook `draw_canvas` payload draws the valid parts and never
-  crashes the page.
+Further browser checks should keep the same reconnaissance-then-action pattern:
+navigate, wait for the UI to become ready, inspect rendered state, then assert.
+Good next checks are malformed dev-hook `draw_canvas` payloads and reset/restore
+behavior.
 
 ## Unit tests (highest-value targets)
 
@@ -88,6 +89,6 @@ Remaining priority targets:
 ## Definition of done for a change
 
 - `npm run typecheck`, `npm run build`, and `npm test` pass.
-- The relevant path was exercised in the browser against the live tool contract.
+- `npm run smoke:offline` passes when the change touches the typed/canvas loop.
 - New pure logic ships with unit tests.
 - No secret in the diff.
