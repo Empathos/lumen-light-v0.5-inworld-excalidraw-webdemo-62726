@@ -19,6 +19,10 @@
   #legend .dim { color: #8f92a3; font-size: 11px; margin-top: 8px; }
   .tip { max-width: 300px; }
   .tip b { color: #fff; } .tip .muted { color: #9aa; }
+  #panelToggle { top: 16px; right: 16px; cursor: pointer; user-select: none;
+                 display: flex; align-items: center; gap: 7px; font-size: 12px; }
+  #panelToggle input { accent-color: #4cc38a; cursor: pointer; }
+  body.panels-hidden #hdr, body.panels-hidden #legend { display: none; }
 </style>
 </head>
 <body>
@@ -27,6 +31,7 @@
 <p>QTrellis register lineage · drag to orbit, scroll to zoom, hover a node · derived view — regenerate, never edit</p>
 <div id="mode">loading…</div></div>
 <div id="legend" class="panel"></div>
+<label id="panelToggle" class="panel"><input type="checkbox" id="panelsChk" checked> legends</label>
 <script type="module">
 // esm.sh rewrites the whole bare-import tree; ?deps pins one shared three
 // instance so our meshes and the graph's renderer use the same classes.
@@ -101,6 +106,17 @@ function parseRegister(md) {
     nodes, links,
   }
 }
+
+// Legends toggle ('L' key works too); choice persists per browser.
+const chk = document.getElementById('panelsChk')
+const setPanels = (on) => {
+  document.body.classList.toggle('panels-hidden', !on)
+  chk.checked = on
+  try { localStorage.setItem('graphify-panels', on ? '1' : '0') } catch { /* private mode */ }
+}
+chk.addEventListener('change', () => setPanels(chk.checked))
+addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 'l' && !e.metaKey && !e.ctrlKey) setPanels(!chk.checked) })
+try { if (localStorage.getItem('graphify-panels') === '0') setPanels(false) } catch { /* default on */ }
 
 // ---- render ----
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
