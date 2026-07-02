@@ -8,6 +8,7 @@ interface ConversationPanelProps {
   status: RealtimeStatus
   micOn: boolean
   onToggleSession: () => void
+  onExport: () => void
   onSend: (text: string) => void
   onHide: () => void
 }
@@ -26,6 +27,7 @@ export function ConversationPanel({
   status,
   micOn,
   onToggleSession,
+  onExport,
   onSend,
   onHide,
 }: ConversationPanelProps) {
@@ -83,6 +85,14 @@ export function ConversationPanel({
           disabled={connecting}
         >
           {connected ? 'End voice session' : connecting ? 'Connecting…' : 'Start voice session'}
+        </button>
+        <button
+          type="button"
+          className="export-btn"
+          onClick={onExport}
+          title="Download session artifact"
+        >
+          Export
         </button>
         {connected && (
           <span className="mic-state">{micOn ? '🎙 mic on' : 'no mic — text only'}</span>

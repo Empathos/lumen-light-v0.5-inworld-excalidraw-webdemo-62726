@@ -46,6 +46,7 @@ events), so only the connection + session-config layer is provider-specific
 | `src/canvas/addImage.ts` | Places generated images and website screenshots on the canvas. |
 | `src/canvas/docWindow.ts` / `markdownDoc.ts` | The on-canvas briefing window: open, read, highlight passages; Markdown rendering. |
 | `src/canvas/persistence.ts` | Serializes the scene to localStorage so drawings, images, and the briefing window survive refresh / back-navigation. |
+| `src/sessionExport.ts` | Formats the live board inventory + bounded transcript into a browser-local Markdown leave-with artifact. |
 | `src/realtime/RealtimeClient.ts` | WebRTC peer connection, mic capture, model-audio playback, data-channel events, and function-call handling. |
 | `src/ui/ConversationPanel.tsx` | Text input, session controls, status, transcripts; resizable + hideable. |
 | `src/assistant/types.ts` | Shared contract: `FlowDiagram`, `AssistantAction`, `AssistantProvider`. |
@@ -85,6 +86,11 @@ server-side and never reach the browser.
      then place an image on the canvas or return data to the model;
    - **document tools** open/read/highlight the on-canvas briefing window.
 6. The scene is persisted to localStorage as it changes.
+
+The panel's **Export** action is intentionally outside the model/tool loop: it
+reads the live board inventory and local transcript in the browser, then
+downloads a Markdown artifact without server calls, auth, or cross-device
+persistence.
 
 ## Tools (the contract)
 

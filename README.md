@@ -58,6 +58,9 @@ Branch `v0.5-inworld-62426-excalidraw`. Working today:
   canvas" wipes the whole board (diagram, images, screenshots, document), but
   only after the agent confirms out loud — and a snapshot is kept so "bring it
   back" undoes an accidental clear.
+- **Session export** — download a local Markdown leave-with artifact containing
+  the board inventory, text labels, source provenance, briefing document note,
+  and recent transcript recap.
 - **A resizable, hideable conversation panel** (drag to resize; tab to hide it
   off-screen and bring it back), and an **installable PWA** (web-app manifest +
   service worker) so it can be added to a phone home screen.

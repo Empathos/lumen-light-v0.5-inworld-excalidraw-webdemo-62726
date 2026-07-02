@@ -28,6 +28,7 @@ difference to behavior.
 - Server logic in `server/backend.ts`, exposed locally by a Vite dev middleware
   and in production by Netlify Functions (no other backend)
 - localStorage scene persistence; installable PWA (manifest + service worker)
+- browser-local Markdown session export for a leave-with artifact
 
 ## Commands
 
@@ -220,6 +221,14 @@ connect was tried and reverted — it broke the voice session
 The text parts are concatenated and injected via `RealtimeClient`'s
 `getSessionGrounding` callback (after `session.updated`, never blocking connect).
 Either part may be empty (e.g. a blank canvas or a first-ever session).
+
+### Session export (leave-with artifact)
+
+The panel's **Export** action downloads a browser-local Markdown artifact for
+the current session. It combines the live board inventory, text labels, source
+provenance (`source.url` screenshots, `source.prompt` generated images, and the
+briefing document title/word count), plus a bounded transcript recap. The export
+does not call a server, add auth, or sync across devices.
 
 ### Behavioral rules
 

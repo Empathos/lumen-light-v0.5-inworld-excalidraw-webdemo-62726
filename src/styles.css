@@ -280,6 +280,22 @@ body.resizing-x {
   cursor: default;
 }
 
+.export-btn {
+  flex: 0 0 auto;
+  background: #0d1018;
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  border-color: var(--accent);
+}
+
 .mic-state {
   font-size: 11px;
   color: var(--text-dim);

@@ -7,8 +7,9 @@ import { drawFlowDiagram } from './canvas/drawFlow'
 import { normalizeFlowDiagram } from './canvas/normalizeFlow'
 import { drawCanvasElements, normalizeCanvasElements } from './canvas/drawCanvas'
 import { addImageToCanvas } from './canvas/addImage'
-import { describeScene, summarizeScene } from './canvas/summarizeScene'
+import { describeScene, sceneInventory, summarizeScene } from './canvas/summarizeScene'
 import { loadTranscript, saveTranscript, summarizeTranscript } from './assistant/transcriptStore'
+import { buildSessionExport, downloadMarkdownExport } from './sessionExport'
 import {
   openDocument,
   highlightPassage,
@@ -259,6 +260,12 @@ export function App() {
     return { ok: true, canvas }
   }, [])
 
+  const exportSession = useCallback(() => {
+    const api = apiRef.current
+    const inventory = api ? sceneInventory(api) : { version: 1 as const, nodes: [], links: [], tags: {} }
+    downloadMarkdownExport(buildSessionExport({ inventory, transcript: messages }))
+  }, [messages])
+
   const clearCanvas = useCallback((args: unknown) => {
     const api = apiRef.current
     if (!api) return { ok: false, error: 'canvas not ready' }
@@ -447,6 +454,7 @@ export function App() {
         status={status}
         micOn={micOn}
         onToggleSession={toggleSession}
+        onExport={exportSession}
         onSend={handleSend}
         onHide={() => setPanelHidden(true)}
       />

@@ -67,6 +67,7 @@ The pure functions are easy, fast, and protect the contract. Vitest is wired up
 |--------|------------------|
 | `clearScene.ts` | no-snapshot restore; document payload restore/removal; one-slot undo overwrite; restored scene re-persisted |
 | `inventory/excalidrawAdapter.ts` | element→node/link mapping; tag round-trip; unknown-tag preservation; derived `source.*` tags win over stored |
+| `sessionExport.ts` | Markdown leave-with artifact from inventory, source provenance, and bounded transcript |
 | `summarizeScene.ts` | inventory→text rendering (counts, hosts, labels, capture_canvas hints) |
 
 Remaining priority targets:
