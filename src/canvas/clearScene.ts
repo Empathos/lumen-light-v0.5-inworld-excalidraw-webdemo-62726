@@ -1,6 +1,7 @@
 import { serializeAsJSON } from '@excalidraw/excalidraw'
 import type { BinaryFiles, ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
+import { DOC_STORAGE_KEY as DOC_KEY } from './docStorage'
 
 /**
  * Full-board clear for the `clear_canvas` tool (BUG-003), with an undo
@@ -13,7 +14,6 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
  */
 
 const SCENE_UNDO_KEY = 'lumen-scene-undo-v1'
-const DOC_KEY = 'lumen-doc-v1'
 const DOC_UNDO_KEY = 'lumen-doc-undo-v1'
 
 /** Stash the current scene + document to the undo keys. Best-effort. */

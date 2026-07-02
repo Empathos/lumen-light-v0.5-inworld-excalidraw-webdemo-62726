@@ -6,13 +6,9 @@ import type {
   FlowNode,
   FlowNodeKind,
 } from './types'
+import { truncate } from '../lib/text'
 
 const MAX_LABEL = 64
-
-function truncate(text: string, max = MAX_LABEL): string {
-  const clean = text.replace(/\s+/g, ' ').trim()
-  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean
-}
 
 /**
  * Turn free text into an ordered list of steps. Tries, in order:
@@ -59,7 +55,7 @@ export function textToFlow(text: string): FlowDiagram {
   const steps = splitSteps(text)
   const nodes: FlowNode[] = steps.map((label, i) => ({
     id: `n${i}`,
-    label: truncate(label),
+    label: truncate(label, MAX_LABEL),
     kind: classify(label, i, steps.length),
   }))
   const edges = nodes.slice(1).map((node, i) => ({

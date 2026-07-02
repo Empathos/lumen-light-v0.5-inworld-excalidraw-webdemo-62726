@@ -2,6 +2,7 @@ import { convertToExcalidrawElements, getCommonBounds } from '@excalidraw/excali
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import { renderMarkdownDoc, type DocSection } from './markdownDoc'
+import { DOC_STORAGE_KEY as DOC_KEY, DOC_VIEWER_PATH as VIEWER_PATH } from './docStorage'
 
 /**
  * The "document briefing" window: a same-origin viewer (`/embed/doc.html`)
@@ -16,8 +17,6 @@ import { renderMarkdownDoc, type DocSection } from './markdownDoc'
  */
 
 const CH = 'lumen-doc'
-const VIEWER_PATH = '/embed/doc.html'
-const DOC_KEY = 'lumen-doc-v1'
 const DOC_W = 440
 const DOC_H = 600
 

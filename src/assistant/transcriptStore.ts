@@ -1,4 +1,5 @@
 import type { ConversationEntry } from './types'
+import { truncate } from '../lib/text'
 
 /**
  * localStorage persistence + recap for the conversation transcript (BUG-001,
@@ -40,11 +41,6 @@ export function saveTranscript(entries: ConversationEntry[]): void {
   } catch {
     /* quota exceeded / storage disabled — non-fatal, continuity just won't persist */
   }
-}
-
-function truncate(s: string, n: number): string {
-  const clean = s.replace(/\s+/g, ' ').trim()
-  return clean.length > n ? `${clean.slice(0, n - 1)}…` : clean
 }
 
 /**
