@@ -73,15 +73,26 @@ function parseRegister(md) {
       descendants.set(cur.id, (descendants.get(cur.id) ?? 0) + 1)
     }
   }
+  const title = (md.match(/^# (.+)$/m) ?? [, 'Register'])[1].replace(/^Product Register — /, '')
+  const kindOf = (id) => id.startsWith('RISK-') ? 'risk' : id.startsWith('GAP-') ? 'gap' : id.startsWith('IDEA-') ? 'idea' : 'feature'
+  const nodes = rows.map((r) => ({
+    id: r.id, item: r.item, status: r.status, ucxm: r.ucxm || '', note: r.note || '',
+    kind: kindOf(r.id), depth: (() => { let d = 0, cur = r; const seen = new Set()
+      while (cur.from && byId.has(cur.from) && !seen.has(cur.id)) { seen.add(cur.id); cur = byId.get(cur.from); d++ } return d })(),
+    color: clusterColor.get(rootOf(r)), val: 2 + (descendants.get(r.id) ?? 0) * 3,
+    glow: BRIGHT[r.status] ?? 0.4,
+  }))
+  const links = rows.filter((r) => r.from && byId.has(r.from)).map((r) => ({ source: r.from, target: r.id }))
+  // The hub: the product itself. Every root ties into it, so the trellis is
+  // one connected structure instead of drifting islands.
+  const HUB = '__hub__'
+  nodes.unshift({ id: HUB, item: title, status: '', ucxm: '', note: 'the product — all lineage roots attach here',
+    kind: 'hub', depth: -1, color: '#e8e6df', val: 14, glow: 0.9 })
+  for (const r of rows) if (!r.from || !byId.has(r.from)) links.push({ source: HUB, target: r.id, hub: true })
   return {
-    title: (md.match(/^# (.+)$/m) ?? [, 'Register'])[1].replace(/^Product Register — /, ''),
+    title,
     legend: [...clusterColor.entries()].map(([root, color]) => ({ root, item: byId.get(root)?.item ?? root, color })),
-    nodes: rows.map((r) => ({
-      id: r.id, item: r.item, status: r.status, ucxm: r.ucxm || '', note: r.note || '',
-      color: clusterColor.get(rootOf(r)), val: 2 + (descendants.get(r.id) ?? 0) * 3,
-      glow: BRIGHT[r.status] ?? 0.4,
-    })),
-    links: rows.filter((r) => r.from && byId.has(r.from)).map((r) => ({ source: r.from, target: r.id })),
+    nodes, links,
   }
 }
 
@@ -90,14 +101,26 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
 const Graph = ForceGraph3D()(document.getElementById('graph'))
   .backgroundColor('#050510')
   .nodeVal('val')
-  .nodeThreeObject((n) => new THREE.Mesh(
-    new THREE.SphereGeometry(Math.cbrt(n.val) * 2.4, 24, 24),
-    new THREE.MeshStandardMaterial({ color: n.color, roughness: 0.3, metalness: 0.15, emissive: n.color, emissiveIntensity: n.glow })
-  ))
-  .nodeLabel((n) => `<div class="panel tip"><b>${esc(n.id)}</b> · ${esc(n.status)}${n.ucxm ? ' · UCXM ' + esc(n.ucxm) : ''}<br>${esc(n.item)}${n.note ? '<br><span class="muted">' + esc(n.note) + '</span>' : ''}</div>`)
-  .linkColor(() => '#3a3a55')
+  .nodeThreeObject((n) => {
+    const r = Math.cbrt(n.val) * 2.4
+    // Shape = kind: hub dodecahedron, feature sphere, risk spiky octahedron,
+    // gap ring (a hole where something should be), idea faint wireframe.
+    const geo =
+      n.kind === 'hub' ? new THREE.DodecahedronGeometry(r) :
+      n.kind === 'risk' ? new THREE.OctahedronGeometry(r * 1.25) :
+      n.kind === 'gap' ? new THREE.TorusGeometry(r * 0.95, r * 0.38, 12, 28) :
+      new THREE.SphereGeometry(r, 24, 24)
+    const mat = new THREE.MeshStandardMaterial({
+      color: n.color, roughness: 0.3, metalness: 0.15,
+      emissive: n.color, emissiveIntensity: n.glow,
+      wireframe: n.kind === 'idea',
+    })
+    return new THREE.Mesh(geo, mat)
+  })
+  .nodeLabel((n) => `<div class="panel tip"><b>${esc(n.id === '__hub__' ? n.item : n.id)}</b> · ${esc(n.kind)}${n.status ? ' · ' + esc(n.status) : ''}${n.ucxm ? ' · UCXM ' + esc(n.ucxm) : ''}<br>${esc(n.item)}${n.note ? '<br><span class="muted">' + esc(n.note) + '</span>' : ''}</div>`)
+  .linkColor((l) => (l.hub ? '#26263c' : '#3a3a55'))
   .linkOpacity(0.55)
-  .linkWidth(0.6)
+  .linkWidth((l) => (l.hub ? 0.2 : 0.6))
   .onNodeClick((n) => Graph.cameraPosition({ x: n.x * 1.4, y: n.y * 1.4, z: n.z * 1.4 + 60 }, n, 900))
 
 function apply(md) {
@@ -106,7 +129,7 @@ function apply(md) {
   document.title = 'Graphify — ' + d.title
   document.getElementById('legend').innerHTML =
     d.legend.map((l) => `<div><i style="background:${l.color}"></i>${esc(l.root)} — ${esc(l.item)}</div>`).join('') +
-    '<div class="dim">size = descendants · brightness = lifecycle (built bright → idea faint)</div>'
+    '<div class="dim">shape = kind: ⬢ product hub · ● feature · ◆ risk · ◎ gap · ○ idea (wireframe)<br>size = descendants · brightness = lifecycle (built bright → idea faint)</div>'
   Graph.graphData(d)
 }
 
