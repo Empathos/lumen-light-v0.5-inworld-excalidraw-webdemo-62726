@@ -8,15 +8,15 @@ Backfilled 2026-07-02 from the sessions of 2026-06-27 → 2026-07-02.
 
 | ID | Item (≤5 words) | From | Status | UCXM | Proof | Note |
 |----|-----------------|------|--------|------|-------|------|
-| LL-001 | Session re-grounding from canvas | — | built | | [ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md) | resolved BUG-001 gap 1 |
+| LL-001 | Session re-grounding from canvas | — | built | | [ADR-0009](decisions/ADR-0009-session-regrounding-from-canvas.md) | theme: Continuity; resolved BUG-001 gap 1 |
 | LL-002 | Conversation transcript persists locally | LL-001 | built | | [ADR-0010](decisions/ADR-0010-persist-conversation-transcript.md) | resolved BUG-001 gap 2 |
 | LL-003 | Read canvas text inventory | LL-001 | built | ++++ | [SPEC](SPEC.md) | U: fixes blindness; C: 30min reuse; X: tiny text; M: no-arg tool |
-| LL-004 | Clear canvas, confirmed, undoable | — | built | ++0+ | [SPEC](SPEC.md) | U: restores lost capability; C: small; M: tool enforces confirm, not memory |
-| LL-005 | Board inventory, extensible tagging | — | built | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | U: unlocks addressing; C: one tested module; M: closed schema |
+| LL-004 | Clear canvas, confirmed, undoable | — | built | ++0+ | [SPEC](SPEC.md) | theme: Control; U: restores lost capability; C: small; M: tool enforces confirm, not memory |
+| LL-005 | Board inventory, extensible tagging | — | built | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | theme: Structure; U: unlocks addressing; C: one tested module; M: closed schema |
 | LL-006 | Hand-drawn content never invisible | LL-003 | built | | [KNOWN_ISSUES](KNOWN_ISSUES.md) | resolved BUG-004 |
 | LL-007 | Model recognizes freehand drawings | LL-006 | built | | [KNOWN_ISSUES](KNOWN_ISSUES.md) | verified live: "house with sun" |
-| RISK-001 | Big payloads kill voice channel | — | concept | | [ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md) | X player defects ≥ ~256KB per message |
-| RISK-002 | Storage quota silently stops persistence | — | concept | | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | screenshot images are megabytes; quota ~5MB; saveScene swallows failure |
+| RISK-001 | Big payloads kill voice channel | — | concept | | [ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md) | theme: Physics; X player defects ≥ ~256KB per message |
+| RISK-002 | Storage quota silently stops persistence | — | concept | | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | theme: Persistence; screenshot images are megabytes; quota ~5MB; saveScene swallows failure |
 | GAP-002 | Surface and survive storage-quota failures | RISK-002 | concept | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | U: prevents silent board loss; C: warn on save failure + slim scene; M: deterministic |
 | GAP-001 | Verify Inworld accepts remote image_url | RISK-001 | concept | ++?0 | [KNOWN_ISSUES](KNOWN_ISSUES.md) | U: unlocks vision tier; C: one-session spike; X: the unknown itself; gates IDEA-001/003 |
 
