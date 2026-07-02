@@ -208,6 +208,30 @@ export class RealtimeClient {
     return true
   }
 
+  /**
+   * Inject an image into the session BY URL (not data URL) plus an optional
+   * text prompt, and ask for a response. This is the URL-by-reference vision
+   * path (register GAP-001/IDEA-001): only a short string crosses the data
+   * channel; the realtime backend fetches the pixels out-of-band — so the
+   * image must be reachable from Inworld's servers, not just this browser.
+   */
+  injectImage(imageUrl: string, text?: string): boolean {
+    if (!this.dc || this.dc.readyState !== 'open') return false
+    this.send({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [
+          ...(text ? [{ type: 'input_text', text }] : []),
+          { type: 'input_image', image_url: imageUrl },
+        ],
+      },
+    })
+    this.send({ type: 'response.create' })
+    return true
+  }
+
   disconnect(): void {
     this.cleanup()
     this.setStatus('closed')
