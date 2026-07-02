@@ -17,16 +17,17 @@ Backfilled 2026-07-02 from the sessions of 2026-06-27 → 2026-07-02.
 | LL-007 | Model recognizes freehand drawings | LL-006 | built | | [KNOWN_ISSUES](KNOWN_ISSUES.md) | verified live: "house with sun" |
 | RISK-001 | Big payloads kill voice channel | — | concept | | [ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md) | X player defects ≥ ~256KB per message |
 | RISK-002 | Storage quota silently stops persistence | — | concept | | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | screenshot images are megabytes; quota ~5MB; saveScene swallows failure |
-| GAP-001 | Verify Inworld accepts remote image_url | RISK-001 | concept | | [KNOWN_ISSUES](KNOWN_ISSUES.md) | one-session spike; gates all Tier-2 vision |
+| GAP-002 | Surface and survive storage-quota failures | RISK-002 | concept | ++0+ | [ADR-0012](decisions/ADR-0012-canvas-agnostic-inventory.md) | U: prevents silent board loss; C: warn on save failure + slim scene; M: deterministic |
+| GAP-001 | Verify Inworld accepts remote image_url | RISK-001 | concept | ++?0 | [KNOWN_ISSUES](KNOWN_ISSUES.md) | U: unlocks vision tier; C: one-session spike; X: the unknown itself; gates IDEA-001/003 |
 
 ## Ideas
 
 | ID | Item (≤5 words) | From | Status | UCXM | Proof | Note |
 |----|-----------------|------|--------|------|-------|------|
 | IDEA-001 | Full-res vision by URL reference | RISK-001 | idea | | | pixels over HTTP, not data channel |
-| IDEA-002 | Cheap fixed-size whole-board overview | RISK-001 | idea | | | scan cheap, zoom sharp; Waldo mode |
+| IDEA-002 | Cheap fixed-size whole-board overview | RISK-001 | idea | ++0? | | U: Waldo queries; C: export scaling exists; M: legibility at 768px unverified |
 | IDEA-003 | Per-asset zoom by node id | IDEA-001 | idea | | | look at one thing full-res |
-| IDEA-004 | Take-me-to board navigation | LL-005 | idea | | | scrollToContent by id; one call |
-| IDEA-005 | Model annotates items with tags | LL-005 | idea | | | tag_item; write path already exists |
+| IDEA-004 | Take-me-to board navigation | LL-005 | idea | +++0 | | U: conversational navigation; C: one scrollToContent call; X: bytes; M: label matching may miss |
+| IDEA-005 | Model annotates items with tags | LL-005 | idea | 0+0? | | C: write path exists; U: unclear until retrieval consumes tags; M: tagging quality unknown |
 | IDEA-006 | Save board to Excalidraw library | LL-004 | idea | | | visible stash before clear; binary round-trip unverified |
-| IDEA-007 | Selection and viewport as focus | LL-005 | idea | | | "this one" = what user selected |
+| IDEA-007 | Selection and viewport as focus | LL-005 | idea | ++++ | | U: fixes "this one"; C: appState read; X: bytes; M: deterministic signal |
