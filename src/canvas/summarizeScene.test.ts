@@ -46,4 +46,10 @@ describe('describeScene', () => {
     const text = describeScene(apiWith([{ type: 'rectangle' }]))
     expect(text).toContain('To see the exact layout, call capture_canvas.')
   })
+
+  it('never reports a board with only hand-drawn content as empty (BUG-004)', () => {
+    const text = describeScene(apiWith([{ type: 'freedraw' }, { type: 'freedraw' }, { type: 'line' }]))
+    expect(text).not.toBeNull()
+    expect(text).toContain('3 other elements')
+  })
 })

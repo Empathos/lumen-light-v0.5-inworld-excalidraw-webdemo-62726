@@ -42,6 +42,10 @@ export function describeScene(api: ExcalidrawImperativeAPI | null): string | nul
     .filter((n) => n.kind === 'generated-image')
     .map((n) => truncate(n.label ?? '', 50))
   const untaggedImages = inv.nodes.filter((n) => n.kind === 'image').length
+  // Hand-drawn strokes, lines, frames, foreign embeds — everything outside
+  // Lumen's own drawing vocabulary. Without this line, a board of only
+  // user-drawn content reads as "empty" (BUG-004).
+  const other = inv.nodes.filter((n) => n.kind === 'unknown').length
   const doc = inv.nodes.find((n) => n.kind === 'document')
 
   const parts: string[] = []
@@ -64,6 +68,11 @@ export function describeScene(api: ExcalidrawImperativeAPI | null): string | nul
     )
   }
   if (untaggedImages) parts.push(`${untaggedImages} image${untaggedImages > 1 ? 's' : ''}`)
+  if (other) {
+    parts.push(
+      `${other} other element${other > 1 ? 's' : ''} (e.g. hand-drawn strokes or lines added by the user)`,
+    )
+  }
 
   if (doc) {
     const words = doc.tags['source.doc-words']
