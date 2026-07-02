@@ -135,7 +135,10 @@ No args. Returns the same live-scene description used for session re-grounding
 (`describeScene` in `src/canvas/summarizeScene.ts`) — shapes/connectors,
 screenshots by host, generated images by prompt, the open-document title, and
 text labels — as a small tool result (`{ ok, canvas }`, or `{ ok, empty }` on a
-blank board). This is the model's cheap mid-session answer to "what's on the
+blank board), prefixed with the user's LIVE FOCUS — what they have selected
+and how much of the board is on screen — so "this one" resolves to the
+selection, and "this stuff" to what is in view (LL-010). This is the model's
+cheap mid-session answer to "what's on the
 board?": text only, bounded (≤40 labels, 60 chars each), so it carries none of
 the data-channel size risk that killed auto-screenshots
 ([ADR-0011](decisions/ADR-0011-visual-grounding-on-resume.md)). Structure comes

@@ -46,6 +46,10 @@ export interface BoardNode {
   label?: string
   bounds: BoardBounds
   tags: Tags
+  /** Focus flags (IDEA-007): derived from the live selection/viewport at read
+   * time, so "this one" is resolvable. Absent when no focus info was supplied. */
+  selected?: boolean
+  inView?: boolean
 }
 
 /** A first-class relationship (today: a connector arrow between elements). */

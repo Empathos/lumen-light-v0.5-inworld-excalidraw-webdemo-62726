@@ -186,6 +186,27 @@ describe('buildInventory', () => {
   })
 })
 
+describe('focus flags (IDEA-007)', () => {
+  it('marks selected and in-view nodes from focus info', () => {
+    const inv = buildInventory(
+      [
+        el({ id: 'near', type: 'rectangle', x: 10, y: 10 }),
+        el({ id: 'far', type: 'rectangle', x: 9000, y: 9000 }),
+      ],
+      { focus: { selectedIds: new Set(['near']), view: { x: 0, y: 0, w: 1000, h: 800 } } },
+    )
+    const near = inv.nodes.find((n) => n.id === 'near')
+    const far = inv.nodes.find((n) => n.id === 'far')
+    expect(near).toMatchObject({ selected: true, inView: true })
+    expect(far).toMatchObject({ selected: false, inView: false })
+  })
+
+  it('leaves flags undefined when no focus info is supplied', () => {
+    const inv = buildInventory([el({ type: 'rectangle' })])
+    expect('selected' in inv.nodes[0]).toBe(false)
+  })
+})
+
 describe('tag round-trip', () => {
   it('mergeTagsIntoElement merges new tags over old and readTags reads them back', () => {
     const original = el({

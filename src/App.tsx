@@ -324,6 +324,9 @@ export function App() {
     // GAP-001 spike: does Inworld accept a REMOTE image_url? Needs a live session.
     w.__lumenInjectImage = (url: string, text?: string) =>
       clientRef.current?.injectImage(url, text) ?? false
+    // IDEA-007: select an element programmatically (live focus testing).
+    w.__lumenSelect = (id: string) =>
+      apiRef.current?.updateScene({ appState: { selectedElementIds: { [id]: true } } })
     w.__lumenGenerateImage = (prompt: string, aspect?: string) =>
       generateImageFromArgs({ prompt, aspect })
     // Place a local data URL directly (no API call) for testing image rendering.

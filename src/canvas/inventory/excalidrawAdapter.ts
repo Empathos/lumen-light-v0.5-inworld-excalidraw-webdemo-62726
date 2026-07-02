@@ -53,7 +53,16 @@ type AdapterView = {
   } | null
 }
 
+/** The user's live focus: what is selected, and what the viewport shows. */
+export interface FocusInfo {
+  selectedIds: Set<string>
+  /** Visible region in scene coordinates; null when unknown. */
+  view: { x: number; y: number; w: number; h: number } | null
+}
+
 export interface BuildInventoryOptions {
+  /** Live focus signals (IDEA-007); nodes gain selected/inView flags. */
+  focus?: FocusInfo
   /**
    * Lazy reader for the open briefing document — only invoked (once) when the
    * scene actually contains the doc window, so boards without one never pay
@@ -111,13 +120,30 @@ function storedTags(view: AdapterView): Tags {
   return out
 }
 
-function nodeOf(view: AdapterView, kind: BoardNode['kind'], label?: string, derived?: Tags): BoardNode {
+function overlaps(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }): boolean {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+}
+
+function nodeOf(
+  view: AdapterView,
+  kind: BoardNode['kind'],
+  label?: string,
+  derived?: Tags,
+  focus?: FocusInfo,
+): BoardNode {
+  const bounds = { x: view.x, y: view.y, w: view.width, h: view.height }
   return {
     id: view.id,
     kind,
     label,
-    bounds: { x: view.x, y: view.y, w: view.width, h: view.height },
+    bounds,
     tags: { ...storedTags(view), ...derived },
+    ...(focus
+      ? {
+          selected: focus.selectedIds.has(view.id),
+          inView: focus.view ? overlaps(bounds, focus.view) : undefined,
+        }
+      : {}),
   }
 }
 
@@ -137,7 +163,7 @@ export function buildInventory(
       case 'rectangle':
       case 'ellipse':
       case 'diamond':
-        nodes.push(nodeOf(element, 'shape'))
+        nodes.push(nodeOf(element, 'shape', undefined, undefined, options.focus))
         break
       case 'text': {
         const text = typeof element.text === 'string' ? element.text : ''
@@ -149,6 +175,7 @@ export function buildInventory(
             'text',
             text,
             element.containerId ? { 'source.container': element.containerId } : undefined,
+            options.focus,
           ),
         )
         break
@@ -165,21 +192,21 @@ export function buildInventory(
         const meta = element.customData?.lumenImage
         if (meta?.kind === 'screenshot') {
           nodes.push(
-            nodeOf(element, 'screenshot', meta.label, meta.label ? { 'source.url': meta.label } : undefined),
+            nodeOf(element, 'screenshot', meta.label, meta.label ? { 'source.url': meta.label } : undefined, options.focus),
           )
         } else if (meta?.kind === 'generated') {
           nodes.push(
-            nodeOf(element, 'generated-image', meta.label, meta.label ? { 'source.prompt': meta.label } : undefined),
+            nodeOf(element, 'generated-image', meta.label, meta.label ? { 'source.prompt': meta.label } : undefined, options.focus),
           )
         } else {
-          nodes.push(nodeOf(element, 'image'))
+          nodes.push(nodeOf(element, 'image', undefined, undefined, options.focus))
         }
         break
       }
       case 'embeddable': {
         const isDoc = !options.docLink || (element.link ?? '').includes(options.docLink)
         if (!isDoc) {
-          nodes.push(nodeOf(element, 'unknown'))
+          nodes.push(nodeOf(element, 'unknown', undefined, undefined, options.focus))
           break
         }
         docInfo ??= options.doc?.() ?? {}
@@ -189,6 +216,7 @@ export function buildInventory(
             'document',
             docInfo.title,
             docInfo.words ? { 'source.doc-words': docInfo.words } : undefined,
+            options.focus,
           ),
         )
         break
@@ -196,7 +224,7 @@ export function buildInventory(
       default:
         // Everything else (freedraw, line, frame, …) stays addressable rather
         // than invisible: consumers can still navigate to or tag it.
-        nodes.push(nodeOf(element, 'unknown'))
+        nodes.push(nodeOf(element, 'unknown', undefined, undefined, options.focus))
         break
     }
   }
@@ -218,13 +246,35 @@ export function buildInventory(
   return { version: 1, nodes, links, tags: { ...options.boardTags } }
 }
 
+/** Read the user's live focus (selection + visible region) off the canvas. */
+export function focusFromApi(api: ExcalidrawImperativeAPI): FocusInfo {
+  const st = api.getAppState() as unknown as {
+    selectedElementIds?: Record<string, boolean>
+    scrollX?: number
+    scrollY?: number
+    zoom?: { value?: number }
+    width?: number
+    height?: number
+  }
+  const zoom = st.zoom?.value || 1
+  const view =
+    typeof st.scrollX === 'number' && typeof st.width === 'number'
+      ? { x: -st.scrollX, y: -(st.scrollY ?? 0), w: (st.width ?? 0) / zoom, h: (st.height ?? 0) / zoom }
+      : null
+  return {
+    selectedIds: new Set(Object.keys(st.selectedElementIds ?? {}).filter((k) => st.selectedElementIds?.[k])),
+    view,
+  }
+}
+
 /**
  * Inventory straight from the live canvas handle — consumers stay engine-free;
- * the api is an opaque token they never dereference.
+ * the api is an opaque token they never dereference. Focus flags (IDEA-007)
+ * are derived from the live selection/viewport unless options supply them.
  */
 export function inventoryFromApi(
   api: ExcalidrawImperativeAPI,
   options: BuildInventoryOptions = {},
 ): BoardInventory {
-  return buildInventory(api.getSceneElements(), options)
+  return buildInventory(api.getSceneElements(), { focus: focusFromApi(api), ...options })
 }

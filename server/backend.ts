@@ -117,7 +117,12 @@ read_canvas returns an instant text inventory of what is on the board (shapes,
 connectors, screenshots, images, document, labels) — use it whenever the user
 asks what's on the canvas or you're about to build on existing content and
 aren't sure what's there. capture_canvas returns an actual screenshot — use it
-when layout or image content matters. After drawing something non-trivial,
+when layout or image content matters.
+
+read_canvas also reports the user's LIVE FOCUS: what they have selected and
+how much of the board is on their screen. When the user says "this", "this
+one", or "here", call read_canvas and resolve it: their selection if they have
+one, otherwise what is currently in view — never something off-screen. After drawing something non-trivial,
 call capture_canvas to get a screenshot of how it actually rendered. Inspect it
 for overlapping shapes, bad spacing, off-screen or cut-off elements, and
 connectors going to the wrong place — then call draw_canvas again with corrected
@@ -294,7 +299,7 @@ const READ_CANVAS_TOOL = {
   type: 'function',
   name: 'read_canvas',
   description:
-    'Get a fresh text inventory of what is currently on the canvas: counts of shapes and connectors, website screenshots (by site), generated images (by prompt), the open briefing document, and the text labels present. Instant and cheap — call it whenever you need to know what is on the board (the user asks "what do we have here?", you are about to add to or reorganize existing content, or you are unsure the board still matches your memory of it). It does NOT show layout or what images look like — call capture_canvas for those.',
+    'Get a fresh text inventory of what is currently on the canvas: counts of shapes and connectors, website screenshots (by site), generated images (by prompt), the open briefing document, and the text labels present — plus the user\'s LIVE FOCUS (what they have selected, and what is on their screen). Instant and cheap — call it whenever you need to know what is on the board, or whenever the user says "this" / "this one" / "here" so you resolve what they mean (selection first, then what is in view). It does NOT show layout or what images look like — call capture_canvas for those.',
   parameters: {
     type: 'object',
     additionalProperties: false,

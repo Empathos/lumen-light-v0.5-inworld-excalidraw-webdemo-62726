@@ -95,7 +95,35 @@ export function describeScene(api: ExcalidrawImperativeAPI | null): string | nul
 
   if (parts.length === 0 && uniqLabels.length === 0) return null
 
-  const lines = [`On the canvas now: ${parts.join(', ') || 'various elements'}.`]
+  // Live focus (IDEA-007): what the user has selected / can see right now.
+  // Selection is the strongest "this" signal; the viewport is the fallback.
+  const nameNode = (n: (typeof inv.nodes)[number]): string => {
+    const label = n.label ? ` "${truncate(n.label, 40)}"` : ''
+    if (n.kind === 'screenshot') return `a website screenshot${n.label ? ` (${hostOf(n.label)})` : ''}`
+    if (n.kind === 'generated-image') return `a generated image${label}`
+    if (n.kind === 'document') return 'the briefing document'
+    if (n.kind === 'text') return `the text${label}`
+    if (n.kind === 'shape') return `a shape${label}`
+    return `an item${label}`
+  }
+  const selectedNodes = inv.nodes.filter((n) => n.selected)
+  const inView = inv.nodes.filter((n) => n.inView).length
+  const viewKnown = inv.nodes.some((n) => n.inView !== undefined)
+
+  const lines: string[] = []
+  if (selectedNodes.length) {
+    const named = selectedNodes.slice(0, 3).map(nameNode).join(', ')
+    const more = selectedNodes.length > 3 ? ` and ${selectedNodes.length - 3} more` : ''
+    lines.push(
+      `USER FOCUS: the user currently has ${named}${more} selected — "this" / "this one" means that selection.`,
+    )
+  } else if (viewKnown && inView < inv.nodes.length) {
+    lines.push(
+      `USER FOCUS: ${inView} of ${inv.nodes.length} items are on the user's screen right now — "this" likely refers to what is in view, not off-screen items.`,
+    )
+  }
+
+  lines.push(`On the canvas now: ${parts.join(', ') || 'various elements'}.`)
   if (uniqLabels.length) {
     lines.push(`Text and labels present: ${uniqLabels.map((l) => `"${l}"`).join(', ')}.`)
   }
